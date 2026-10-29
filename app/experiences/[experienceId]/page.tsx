@@ -8,11 +8,11 @@ interface PageProps {
 }
 
 const PROGRAM_CATALOG = [
-  'Pro Sales Closer Mastery',
-  'Elite B2B Outbound Lab',
-  'High-Ticket Sales Framework',
-  'Mentoría 1 a 1 de Cierre',
-  'Soporte de Acceso / Whop',
+  'Pro Sales Training — Membresía General',
+  'Entrenamiento Intensivo de Ventas',
+  'Acompañamiento & Roleplays con Marcelo Gutierrez',
+  'Dudas de Facturación o Acceso a Whop',
+  'Otro / Consulta General',
 ];
 
 export default function StudentExperiencePage(props: PageProps) {
@@ -40,13 +40,13 @@ export default function StudentExperiencePage(props: PageProps) {
   const getBotOrientation = (text: string) => {
     const s = text.toLowerCase();
     if (/pitch|script|guion|guión|mensaje|prospeccion|prospección/.test(s)) {
-      return 'Regla clave de Pro Sales: no intentes vender el servicio en el primer contacto, vende únicamente la llamada de diagnóstico de 15 minutos. Si buscas feedback táctico sobre tu redacción exacta, escala este ticket a un mentor humano.';
+      return 'Regla clave de Pro Sales: no intentes vender el servicio en el primer contacto, vende únicamente la llamada de diagnóstico de 15 minutos. Si buscas feedback táctico sobre tu redacción exacta, escala este ticket a un mentor del equipo de Marcelo Gutierrez.';
     }
     if (/socio|pensar|revisar|objecion|objeción|precio|caro/.test(s)) {
       return 'Si el prospecto menciona "lo tengo que pensar con mi socio", valida la objeción: "¿Si dependiera solo de ti, avanzarías hoy?". Aísla la causa real antes de cerrar la llamada y consulta el módulo de aislamiento de objeciones.';
     }
     if (/horario|calendario|sesion|sesión|roleplay|zoom|directo|vivo/.test(s)) {
-      return 'Nuestras sesiones y roleplays en directo se realizan a través de la sala oficial de Zoom (puedes ingresar directamente desde el botón superior). El calendario semanal detallado está en los anuncios fijados de Whop.';
+      return 'Nuestras sesiones y roleplays en directo se realizan mediante la sala oficial de Zoom (puedes ingresar directamente desde el botón superior). El calendario semanal detallado está en los anuncios fijados dentro de Whop.';
     }
     if (/grabacion|grabaciones|acceso|drive|modulo|módulo/.test(s)) {
       return 'Las grabaciones se indexan en tu sección de cursos en Whop dentro de las 24 horas siguientes a la llamada en vivo. Si tu suscripción no muestra los módulos actualizados, escala el ticket para sincronizar tu acceso.';
@@ -78,7 +78,7 @@ export default function StudentExperiencePage(props: PageProps) {
         fontFamily: 'Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* Barra superior de anuncio */}
+      {/* Barra superior */}
       <div
         style={{
           backgroundColor: '#08101e',
@@ -92,10 +92,10 @@ export default function StudentExperiencePage(props: PageProps) {
           textTransform: 'uppercase',
         }}
       >
-        <span style={{ color: '#00a2ff', marginRight: '6px' }}>PRO SALES TRAINING</span> Hub Oficial de Operaciones, Mentoría y Cierres
+        <span style={{ color: '#00a2ff', marginRight: '6px' }}>PRO SALES TRAINING</span> El mejor entrenamiento en ventas de habla hispana
       </div>
 
-      {/* Header y Navegación */}
+      {/* Cabecera y Navegación */}
       <header
         style={{
           maxWidth: '1200px',
@@ -223,7 +223,7 @@ export default function StudentExperiencePage(props: PageProps) {
             Acompañamiento Comercial Activo
           </span>
           <h1 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 900, margin: '0 0 10px', color: '#ffffff' }}>
-            ¿En qué podemos{' '}
+            Soporte Operativo ·{' '}
             <span
               style={{
                 background: 'linear-gradient(135deg, #0076f5 0%, #00a8ff 100%)',
@@ -231,11 +231,11 @@ export default function StudentExperiencePage(props: PageProps) {
                 WebkitTextFillColor: 'transparent',
               }}
             >
-              apoyarte hoy?
+              Pro Sales Training
             </span>
           </h1>
-          <p style={{ color: '#8b9bb4', fontSize: '15px', lineHeight: 1.6, margin: 0, maxWidth: '700px' }}>
-            Plantea tus dudas sobre prospección, roleplays o consultas técnicas en Whop. El sistema te orientará de inmediato o transferirá el caso a los mentores de Pro Sales Training.
+          <p style={{ color: '#8b9bb4', fontSize: '15px', lineHeight: 1.6, margin: 0, maxWidth: '720px' }}>
+            El mejor entrenamiento en ventas de habla hispana. Plantea tus dudas sobre cierres, roleplays en vivo con el equipo de Marcelo Gutierrez o reporta incidentes de acceso.
           </p>
         </section>
 
@@ -376,7 +376,7 @@ export default function StudentExperiencePage(props: PageProps) {
                   </label>
                   <textarea
                     rows={4}
-                    placeholder="Ej: Tengo una objeción recurrente de presupuesto o requiero soporte con las grabaciones del módulo 2…"
+                    placeholder="Ej: Tengo una objeción recurrente de presupuesto o requiero soporte con las grabaciones del entrenamiento…"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     required
@@ -415,6 +415,7 @@ export default function StudentExperiencePage(props: PageProps) {
                           color: '#9cb0cc',
                           fontSize: '11px',
                           fontWeight: 600,
+                          cursor: 'pointer',
                         }}
                       >
                         {btn.label}
@@ -569,7 +570,7 @@ export default function StudentExperiencePage(props: PageProps) {
                       <strong style={{ color: '#fbbf24', display: 'block', marginBottom: '4px' }}>
                         Ticket transferido al equipo docente de Pro Sales Training
                       </strong>
-                      Tu consulta ha entrado a la cola de atención comercial prioritaria. La revisaremos directamente en la siguiente sesión de práctica en Zoom.
+                      Tu consulta ha entrado a la cola de atención comercial prioritaria. La revisaremos directamente con Marcelo Gutierrez o en la siguiente sesión de práctica en Zoom.
                     </div>
                   )}
                 </div>
@@ -651,7 +652,7 @@ export default function StudentExperiencePage(props: PageProps) {
         </div>
       </div>
 
-      {/* Notificación Toast */}
+      {/* Toast */}
       {toastMessage && (
         <div
           style={{
