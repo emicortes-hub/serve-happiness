@@ -22,6 +22,7 @@ export default function StudentExperiencePage(props: PageProps) {
   const [program, setProgram] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
   const [message, setMessage] = useState('');
 
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -64,6 +65,7 @@ export default function StudentExperiencePage(props: PageProps) {
           caseId: currentCode,
           name: name.trim(),
           email: email.trim(),
+          whatsapp: whatsapp.trim(),
           program,
           message: message.trim(),
           type: payloadType,
@@ -165,7 +167,7 @@ export default function StudentExperiencePage(props: PageProps) {
             <div style={{ fontSize: '20px', fontWeight: 900, lineHeight: 1 }}>
               <span
                 style={{
-                  background: 'linear-gradient(135deg, #0076f5 0%, #00a8ff 100%)',
+                  background: 'linear-gradient(135deg, #0076f5 0%, #00b4ff 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                 }}
@@ -344,8 +346,8 @@ export default function StudentExperiencePage(props: PageProps) {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                    columnGap: '16px',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                    columnGap: '14px',
                     rowGap: '16px',
                     marginBottom: '18px',
                   }}
@@ -375,13 +377,36 @@ export default function StudentExperiencePage(props: PageProps) {
                   </div>
                   <div style={{ minWidth: 0 }}>
                     <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '8px', color: '#d1dced' }}>
-                      Correo registrado en Whop
+                      Correo en Whop
                     </label>
                     <input
                       type="email"
                       placeholder="correo@ejemplo.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      required
+                      style={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        border: '1px solid #1a2a47',
+                        borderRadius: '11px',
+                        backgroundColor: '#081120',
+                        padding: '13px 15px',
+                        color: '#ffffff',
+                        outline: 'none',
+                        fontSize: '13px',
+                      }}
+                    />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '8px', color: '#d1dced' }}>
+                      WhatsApp (con código país)
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="+52 55 1234 5678"
+                      value={whatsapp}
+                      onChange={(e) => setWhatsapp(e.target.value)}
                       required
                       style={{
                         width: '100%',
@@ -630,7 +655,7 @@ export default function StudentExperiencePage(props: PageProps) {
                 }}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{ width: '18px', height: '18px' }}>
-                  <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z" />
+                  <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z" />
                 </svg>
               </div>
               <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 6px', color: '#ffffff' }}>

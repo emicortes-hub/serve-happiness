@@ -17,7 +17,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { caseId, name, email, program, message, type } = body;
+    const { caseId, name, email, whatsapp, program, message, type } = body;
 
     const token = process.env.TELEGRAM_BOT_TOKEN;
     const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -30,6 +30,10 @@ export async function POST(req: Request) {
       );
     }
 
+    const cleanPhone = (whatsapp || '').replace(/[^0-9]/g, '');
+    const waLink = cleanPhone ? `https://wa.me/${cleanPhone}` : null;
+    const waText = waLink ? `<a href="${waLink}">${whatsapp}</a>` : (whatsapp || 'No especificado');
+
     const isEscalation = type === 'escalation';
 
     const text = isEscalation
@@ -37,6 +41,7 @@ export async function POST(req: Request) {
         `🆔 <b>Caso:</b> <code>${caseId}</code>\n` +
         `👤 <b>Alumno:</b> ${name}\n` +
         `📧 <b>Email:</b> ${email}\n` +
+        `📱 <b>WhatsApp:</b> ${waText}\n` +
         `📚 <b>Programa:</b> ${program}\n` +
         `📝 <b>Consulta / Bloqueo:</b>\n<i>"${message}"</i>\n\n` +
         `⚠️ <i>Requiere revisión directa de mentores.</i>`
@@ -44,6 +49,7 @@ export async function POST(req: Request) {
         `🆔 <b>Caso:</b> <code>${caseId}</code>\n` +
         `👤 <b>Alumno:</b> ${name}\n` +
         `📧 <b>Email:</b> ${email}\n` +
+        `📱 <b>WhatsApp:</b> ${waText}\n` +
         `📚 <b>Programa:</b> ${program}\n` +
         `📝 <b>Detalle:</b>\n<i>"${message}"</i>`;
 
@@ -54,6 +60,7 @@ export async function POST(req: Request) {
         chat_id: chatId,
         text: text,
         parse_mode: 'HTML',
+        disable_web_page_preview: true,
       }),
     });
 
