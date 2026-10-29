@@ -3,8 +3,7 @@
 import React, { useState, use } from 'react';
 
 interface PageProps {
-  params: Promise<{ experienceId: string }>;
-  searchParams?: Promise<{ user_id?: string }>;
+  params: Promise<{ companyId?: string; experienceId?: string }>;
 }
 
 const PROGRAM_CATALOG = [
@@ -15,9 +14,28 @@ const PROGRAM_CATALOG = [
   'Otro / Consulta General',
 ];
 
-export default function StudentExperiencePage(props: PageProps) {
+const FAQ_ITEMS = [
+  {
+    q: '¿Dónde encuentro las grabaciones de las sesiones?',
+    a: 'Todas las llamadas y entrenamientos semanales se suben en la sección "Módulos y Grabaciones" dentro de Whop en un plazo máximo de 24 horas tras finalizar la sesión.',
+  },
+  {
+    q: '¿Cómo descargo los guiones y plantillas de prospección?',
+    a: 'Encuentras las hojas de cálculo, scripts de llamadas y plantillas de mensajes fijadas en la pestaña "Recursos" o en la descripción de cada módulo del programa.',
+  },
+  {
+    q: '¿Qué días y horas son los roleplays en vivo?',
+    a: 'Las dinámicas grupales de roleplay se llevan a cabo de lunes a jueves en la sala Zoom oficial. Consulta el horario fijado arriba y el calendario en Whop.',
+  },
+  {
+    q: '¿Tengo problemas para acceder a un módulo específico?',
+    a: 'Selecciona "Dudas de Facturación o Acceso a Whop" en el formulario, indícanos tu correo de compra y el equipo docente te habilitará el acceso.',
+  },
+];
+
+export default function ProSalesTrainingExperience(props: PageProps) {
   const resolvedParams = use(props.params);
-  const experienceId = resolvedParams.experienceId;
+  const currentId = resolvedParams.companyId || resolvedParams.experienceId || 'PST-ACADEMY';
 
   const [program, setProgram] = useState('');
   const [name, setName] = useState('');
@@ -32,6 +50,11 @@ export default function StudentExperiencePage(props: PageProps) {
   const [botAnswer, setBotAnswer] = useState('');
   const [status, setStatus] = useState<'initial' | 'resolved' | 'escalated'>('initial');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const toggleFaq = (idx: number) => {
+    setOpenFaq(openFaq === idx ? null : idx);
+  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -57,8 +80,7 @@ export default function StudentExperiencePage(props: PageProps) {
 
   const notifyTelegram = async (payloadType: 'ticket' | 'escalation' | 'resolved', currentCode: string) => {
     try {
-      const baseUrl = 'https://serve-happiness.vercel.app';
-      const res = await fetch(`${baseUrl}/api/support/ticket`, {
+      const res = await fetch('/api/support/ticket', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -71,9 +93,7 @@ export default function StudentExperiencePage(props: PageProps) {
           type: payloadType,
         }),
       });
-
-      const data = await res.json();
-      console.log('Respuesta Telegram API:', data);
+      await res.json();
     } catch (e) {
       console.error('Error al notificar a Telegram', e);
     }
@@ -92,7 +112,7 @@ export default function StudentExperiencePage(props: PageProps) {
     setHasSubmitted(true);
 
     notifyTelegram('ticket', code);
-    showToast('Solicitud enviada al equipo.');
+    showToast('Solicitud enviada al equipo docente.');
   };
 
   return (
@@ -136,12 +156,7 @@ export default function StudentExperiencePage(props: PageProps) {
           <img
             src="/logo-circular.png"
             alt="Pro Sales Training"
-            style={{
-              width: '46px',
-              height: '46px',
-              objectFit: 'contain',
-              display: 'block',
-            }}
+            style={{ width: '46px', height: '46px', objectFit: 'contain', display: 'block' }}
           />
           <div>
             <div style={{ fontSize: '20px', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em' }}>
@@ -203,6 +218,51 @@ export default function StudentExperiencePage(props: PageProps) {
       </header>
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '38px 24px 72px' }}>
+        {/* HORARIO DE ZOOM VISIBLE */}
+        <div
+          style={{
+            backgroundColor: '#0a1426',
+            border: '1px solid #1a2f52',
+            borderRadius: '12px',
+            padding: '14px 20px',
+            marginBottom: '30px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '18px' }}>⏰</span>
+            <div>
+              <strong style={{ fontSize: '12px', color: '#ffffff', display: 'block' }}>
+                Horarios oficiales de Sala Zoom y Roleplays en vivo
+              </strong>
+              <span style={{ fontSize: '11px', color: '#8b9bb4' }}>
+                Lunes a Jueves · 11:00 AM y 6:00 PM (Hora CDMX / GMT-6)
+              </span>
+            </div>
+          </div>
+          <a
+            href="https://us02web.zoom.us/j/9272409073?pwd=feP7nGIvZidKJBcqb6v3roewaQrQX1.1"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontSize: '11px',
+              fontWeight: 800,
+              color: '#00a2ff',
+              textDecoration: 'none',
+              padding: '6px 12px',
+              backgroundColor: 'rgba(0, 118, 245, 0.12)',
+              border: '1px solid rgba(0, 162, 255, 0.3)',
+              borderRadius: '8px',
+            }}
+          >
+            Entrar ahora ↗
+          </a>
+        </div>
+
         <section style={{ marginBottom: '34px' }}>
           <span
             style={{
@@ -246,6 +306,7 @@ export default function StudentExperiencePage(props: PageProps) {
             alignItems: 'start',
           }}
         >
+          {/* COLUMNA FORMULARIO */}
           <section>
             <div
               style={{
@@ -506,7 +567,7 @@ export default function StudentExperiencePage(props: PageProps) {
                       Solicitud registrada para {submittedName}
                     </h3>
                     <p style={{ margin: 0, fontSize: '12px', color: '#8b9bb4' }}>
-                      {submittedProgram} · ID: {experienceId}
+                      {submittedProgram} · ID: {currentId}
                     </p>
                   </div>
                   <span
@@ -631,6 +692,7 @@ export default function StudentExperiencePage(props: PageProps) {
             )}
           </section>
 
+          {/* COLUMNA LATERAL + FAQ */}
           <aside style={{ display: 'grid', gap: '20px' }}>
             <div
               style={{
@@ -665,6 +727,7 @@ export default function StudentExperiencePage(props: PageProps) {
               </p>
             </div>
 
+            {/* SECCIÓN PREGUNTAS FRECUENTES (FAQ) */}
             <div
               style={{
                 backgroundColor: '#0f192d',
@@ -673,31 +736,64 @@ export default function StudentExperiencePage(props: PageProps) {
                 padding: '24px',
               }}
             >
-              <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 16px', color: '#ffffff' }}>
-                Ruta de tu consulta
+              <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 14px', color: '#ffffff' }}>
+                Preguntas Frecuentes
               </h3>
-              <div style={{ display: 'grid', gap: '16px' }}>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#0076f5', marginTop: '3px' }} />
-                  <div>
-                    <strong style={{ fontSize: '12px', display: 'block', color: '#f0f6fc' }}>Registro del caso</strong>
-                    <small style={{ fontSize: '11px', color: '#8b9bb4' }}>Indexado con tu perfil de Whop</small>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#0076f5', marginTop: '3px' }} />
-                  <div>
-                    <strong style={{ fontSize: '12px', display: 'block', color: '#f0f6fc' }}>Diagnóstico táctico</strong>
-                    <small style={{ fontSize: '11px', color: '#8b9bb4' }}>Guías y mejores prácticas</small>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#1a2a47', marginTop: '3px' }} />
-                  <div>
-                    <strong style={{ fontSize: '12px', display: 'block', color: '#f0f6fc' }}>Intervención de Mentor</strong>
-                    <small style={{ fontSize: '11px', color: '#8b9bb4' }}>Revisión en vivo vía Zoom</small>
-                  </div>
-                </div>
+
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {FAQ_ITEMS.map((item, index) => {
+                  const isOpen = openFaq === index;
+                  return (
+                    <div
+                      key={index}
+                      style={{
+                        backgroundColor: '#081120',
+                        border: '1px solid #16243d',
+                        borderRadius: '9px',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleFaq(index)}
+                        style={{
+                          width: '100%',
+                          padding: '12px 14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          backgroundColor: 'transparent',
+                          border: 'none',
+                          color: '#e2ecf9',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <span>{item.q}</span>
+                        <span style={{ fontSize: '14px', color: '#00a2ff', fontWeight: 800, marginLeft: '8px' }}>
+                          {isOpen ? '−' : '+'}
+                        </span>
+                      </button>
+
+                      {isOpen && (
+                        <div
+                          style={{
+                            padding: '0 14px 12px 14px',
+                            fontSize: '12px',
+                            color: '#8b9bb4',
+                            lineHeight: 1.55,
+                            borderTop: '1px solid rgba(255, 255, 255, 0.04)',
+                            paddingTop: '8px',
+                          }}
+                        >
+                          {item.a}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </aside>
