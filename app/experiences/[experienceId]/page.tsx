@@ -54,6 +54,29 @@ export default function StudentExperiencePage(props: PageProps) {
     return 'Hemos registrado tu consulta comercial. Te sugerimos revisar las plantillas del repositorio de Pro Sales Training; si requieres apoyo de un mentor para una llamada próxima, pulsa "Escalar a Mentor Humano".';
   };
 
+  const notifyTelegram = async (payloadType: 'ticket' | 'escalation', currentCode: string) => {
+    try {
+      const baseUrl = 'https://serve-happiness.vercel.app';
+      const res = await fetch(`${baseUrl}/api/support/ticket`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          caseId: currentCode,
+          name: name.trim(),
+          email: email.trim(),
+          program,
+          message: message.trim(),
+          type: payloadType,
+        }),
+      });
+
+      const data = await res.json();
+      console.log('Respuesta Telegram API:', data);
+    } catch (e) {
+      console.error('Error al notificar a Telegram', e);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !program || !message.trim()) return;
@@ -66,7 +89,8 @@ export default function StudentExperiencePage(props: PageProps) {
     setStatus('initial');
     setHasSubmitted(true);
 
-    showToast('Solicitud registrada correctamente.');
+    notifyTelegram('ticket', code);
+    showToast('Solicitud enviada al equipo.');
   };
 
   return (
@@ -78,7 +102,6 @@ export default function StudentExperiencePage(props: PageProps) {
         fontFamily: 'Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* Barra superior */}
       <div
         style={{
           backgroundColor: '#08101e',
@@ -95,7 +118,6 @@ export default function StudentExperiencePage(props: PageProps) {
         <span style={{ color: '#00a2ff', marginRight: '6px' }}>PRO SALES TRAINING</span> El mejor entrenamiento en ventas de habla hispana
       </div>
 
-      {/* Navegación */}
       <header
         style={{
           maxWidth: '1200px',
@@ -200,7 +222,6 @@ export default function StudentExperiencePage(props: PageProps) {
         </a>
       </header>
 
-      {/* Contenido Principal */}
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '38px 24px 72px' }}>
         <section style={{ marginBottom: '34px' }}>
           <span
@@ -245,7 +266,6 @@ export default function StudentExperiencePage(props: PageProps) {
             alignItems: 'start',
           }}
         >
-          {/* Formulario */}
           <section>
             <div
               style={{
@@ -321,7 +341,6 @@ export default function StudentExperiencePage(props: PageProps) {
                   </select>
                 </div>
 
-                {/* FILA DE NOMBRE Y CORREO CON SEPARACIÓN LIMPIA */}
                 <div
                   style={{
                     display: 'grid',
@@ -459,7 +478,6 @@ export default function StudentExperiencePage(props: PageProps) {
               </form>
             </div>
 
-            {/* Resultado dinámico */}
             {hasSubmitted && (
               <div
                 style={{
@@ -547,6 +565,7 @@ export default function StudentExperiencePage(props: PageProps) {
                       type="button"
                       onClick={() => {
                         setStatus('escalated');
+                        notifyTelegram('escalation', caseId);
                         showToast('Ticket transferido al equipo docente.');
                       }}
                       style={{
@@ -588,7 +607,6 @@ export default function StudentExperiencePage(props: PageProps) {
             )}
           </section>
 
-          {/* Lateral */}
           <aside style={{ display: 'grid', gap: '20px' }}>
             <div
               style={{
@@ -612,7 +630,7 @@ export default function StudentExperiencePage(props: PageProps) {
                 }}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{ width: '18px', height: '18px' }}>
-                  <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z" />
+                  <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z" />
                 </svg>
               </div>
               <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 6px', color: '#ffffff' }}>
@@ -662,7 +680,6 @@ export default function StudentExperiencePage(props: PageProps) {
         </div>
       </div>
 
-      {/* Toast Flotante */}
       {toastMessage && (
         <div
           style={{
