@@ -34,24 +34,38 @@ export async function POST(req: Request) {
     const waLink = cleanPhone ? `https://wa.me/${cleanPhone}` : null;
     const waText = waLink ? `<a href="${waLink}">${whatsapp}</a>` : (whatsapp || 'No especificado');
 
-    const isEscalation = type === 'escalation';
+    let text = '';
 
-    const text = isEscalation
-      ? `🚨 <b>¡TICKET ESCALADO A MENTOR!</b> 🚨\n\n` +
+    if (type === 'escalation') {
+      text =
+        `🚨 <b>¡TICKET ESCALADO A MENTOR!</b> 🚨\n\n` +
         `🆔 <b>Caso:</b> <code>${caseId}</code>\n` +
         `👤 <b>Alumno:</b> ${name}\n` +
         `📧 <b>Email:</b> ${email}\n` +
         `📱 <b>WhatsApp:</b> ${waText}\n` +
         `📚 <b>Programa:</b> ${program}\n` +
         `📝 <b>Consulta / Bloqueo:</b>\n<i>"${message}"</i>\n\n` +
-        `⚠️ <i>Requiere revisión directa de mentores.</i>`
-      : `📩 <b>NUEVA CONSULTA - PRO SALES TRAINING</b>\n\n` +
+        `⚠️ <i>Requiere revisión directa de mentores.</i>`;
+    } else if (type === 'resolved') {
+      text =
+        `✅ <b>TICKET RESUELTO CON ÉXITO</b> ✅\n\n` +
+        `🆔 <b>Caso:</b> <code>${caseId}</code>\n` +
+        `👤 <b>Alumno:</b> ${name}\n` +
+        `📧 <b>Email:</b> ${email}\n` +
+        `📱 <b>WhatsApp:</b> ${waText}\n` +
+        `📚 <b>Programa:</b> ${program}\n` +
+        `📝 <b>Consulta Original:</b>\n<i>"${message}"</i>\n\n` +
+        `👌 <i>El alumno marcó "Duda Aclarada". No requiere acción.</i>`;
+    } else {
+      text =
+        `📩 <b>NUEVA CONSULTA - PRO SALES TRAINING</b>\n\n` +
         `🆔 <b>Caso:</b> <code>${caseId}</code>\n` +
         `👤 <b>Alumno:</b> ${name}\n` +
         `📧 <b>Email:</b> ${email}\n` +
         `📱 <b>WhatsApp:</b> ${waText}\n` +
         `📚 <b>Programa:</b> ${program}\n` +
         `📝 <b>Detalle:</b>\n<i>"${message}"</i>`;
+    }
 
     const telegramRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',

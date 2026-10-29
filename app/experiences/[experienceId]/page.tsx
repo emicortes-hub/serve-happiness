@@ -55,7 +55,7 @@ export default function StudentExperiencePage(props: PageProps) {
     return 'Hemos registrado tu consulta comercial. Te sugerimos revisar las plantillas del repositorio de Pro Sales Training; si requieres apoyo de un mentor para una llamada próxima, pulsa "Escalar a Mentor Humano".';
   };
 
-  const notifyTelegram = async (payloadType: 'ticket' | 'escalation', currentCode: string) => {
+  const notifyTelegram = async (payloadType: 'ticket' | 'escalation' | 'resolved', currentCode: string) => {
     try {
       const baseUrl = 'https://serve-happiness.vercel.app';
       const res = await fetch(`${baseUrl}/api/support/ticket`, {
@@ -571,6 +571,7 @@ export default function StudentExperiencePage(props: PageProps) {
                       type="button"
                       onClick={() => {
                         setStatus('resolved');
+                        notifyTelegram('resolved', caseId);
                         showToast('Caso marcado como resuelto.');
                       }}
                       style={{
@@ -607,6 +608,26 @@ export default function StudentExperiencePage(props: PageProps) {
                       Escalar a Mentor Humano
                     </button>
                   </div>
+
+                  {status === 'resolved' && (
+                    <div
+                      style={{
+                        marginTop: '16px',
+                        backgroundColor: '#071d15',
+                        border: '1px solid #144934',
+                        borderRadius: '10px',
+                        padding: '14px',
+                        fontSize: '12px',
+                        lineHeight: 1.5,
+                        color: '#6ee7b7',
+                      }}
+                    >
+                      <strong style={{ color: '#34d399', display: 'block', marginBottom: '4px' }}>
+                        ¡Consulta aclarada con éxito!
+                      </strong>
+                      Has confirmado que la orientación resolvió tu duda. El registro ha sido actualizado para el equipo docente.
+                    </div>
+                  )}
 
                   {status === 'escalated' && (
                     <div
@@ -655,7 +676,7 @@ export default function StudentExperiencePage(props: PageProps) {
                 }}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{ width: '18px', height: '18px' }}>
-                  <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z" />
+                  <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z" />
                 </svg>
               </div>
               <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 6px', color: '#ffffff' }}>
