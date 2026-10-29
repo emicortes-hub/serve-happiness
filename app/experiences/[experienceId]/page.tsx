@@ -1,577 +1,724 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, use } from 'react';
 
-interface DashboardProps {
-  params: Promise<{ companyId: string }>;
+interface PageProps {
+  params: Promise<{ experienceId: string }>;
+  searchParams?: Promise<{ user_id?: string }>;
 }
 
-export default function ServeOperationsConsole(props: DashboardProps) {
+const PROGRAM_CATALOG = [
+  'Pro Sales Training — Membresía General',
+  'Entrenamiento Intensivo de Ventas',
+  'Acompañamiento & Roleplays con Marcelo Gutierrez',
+  'Dudas de Facturación o Acceso a Whop',
+  'Otro / Consulta General',
+];
+
+export default function StudentExperiencePage(props: PageProps) {
   const resolvedParams = use(props.params);
-  const companyId = resolvedParams.companyId;
+  const experienceId = resolvedParams.experienceId;
 
-  // Estados de configuración del Tenant
-  const [clientName, setClientName] = useState('');
-  const [tagline, setTagline] = useState('');
-  const [clientBrandColor, setClientBrandColor] = useState('#B89A60');
-  const [clientLogoUrl, setClientLogoUrl] = useState('');
-  const [zoomUrl, setZoomUrl] = useState('');
-  const [telegramChatId, setTelegramChatId] = useState('');
-  const [enableEscalationAlerts, setEnableEscalationAlerts] = useState(true);
-  const [programsText, setProgramsText] = useState('');
+  const [program, setProgram] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [message, setMessage] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'settings'>('overview');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [caseId, setCaseId] = useState('');
+  const [submittedName, setSubmittedName] = useState('');
+  const [submittedProgram, setSubmittedProgram] = useState('');
+  const [botAnswer, setBotAnswer] = useState('');
+  const [status, setStatus] = useState<'initial' | 'resolved' | 'escalated'>('initial');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3200);
+    setTimeout(() => setToastMessage(null), 2800);
   };
 
-  // Cargar configuración existente desde Supabase
-  useEffect(() => {
-    async function fetchTenantSettings() {
-      try {
-        const res = await fetch(`/api/settings?companyId=${companyId}`);
-        const data = await res.json();
-        if (data) {
-          setClientName(data.client_name || '');
-          setTagline(data.tagline || '');
-          setClientBrandColor(data.brand_color || '#B89A60');
-          setClientLogoUrl(data.logo_url || '');
-          setZoomUrl(data.zoom_url || '');
-          setTelegramChatId(data.telegram_chat_id || '');
-          setEnableEscalationAlerts(data.enable_escalation ?? true);
-          if (Array.isArray(data.programs)) {
-            setProgramsText(data.programs.join('\n'));
-          }
-        }
-      } catch (err) {
-        console.error('Error al obtener tenant:', err);
-      } finally {
-        setIsLoading(false);
-      }
+  const getBotOrientation = (text: string) => {
+    const s = text.toLowerCase();
+    if (/pitch|script|guion|guión|mensaje|prospeccion|prospección/.test(s)) {
+      return 'Regla clave de Pro Sales: no intentes vender el servicio en el primer contacto, vende únicamente la llamada de diagnóstico de 15 minutos. Si buscas feedback táctico sobre tu redacción exacta, escala este ticket a un mentor del equipo de Marcelo Gutierrez.';
     }
-    fetchTenantSettings();
-  }, [companyId]);
+    if (/socio|pensar|revisar|objecion|objeción|precio|caro/.test(s)) {
+      return 'Si el prospecto menciona "lo tengo que pensar con mi socio", valida la objeción: "¿Si dependiera solo de ti, avanzarías hoy?". Aísla la causa real antes de cerrar la llamada y consulta el módulo de aislamiento de objeciones.';
+    }
+    if (/horario|calendario|sesion|sesión|roleplay|zoom|directo|vivo/.test(s)) {
+      return 'Nuestras sesiones y roleplays en directo se realizan mediante la sala oficial de Zoom (puedes ingresar directamente desde el botón superior). El calendario semanal detallado está en los anuncios fijados dentro de Whop.';
+    }
+    if (/grabacion|grabaciones|acceso|drive|modulo|módulo/.test(s)) {
+      return 'Las grabaciones se indexan en tu sección de cursos en Whop dentro de las 24 horas siguientes a la llamada en vivo. Si tu suscripción no muestra los módulos actualizados, escala el ticket para sincronizar tu acceso.';
+    }
+    return 'Hemos registrado tu consulta comercial. Te sugerimos revisar las plantillas del repositorio de Pro Sales Training; si requieres apoyo de un mentor para una llamada próxima, pulsa "Escalar a Mentor Humano".';
+  };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-
-    const payload = {
-      companyId,
-      clientName,
-      tagline,
-      clientBrandColor,
-      clientLogoUrl,
-      zoomUrl,
-      telegramChatId,
-      enableEscalationAlerts,
-      programs: programsText.split('\n').filter((p) => p.trim().length > 0),
-    };
-
+  const notifyTelegram = async (payloadType: 'ticket' | 'escalation' | 'resolved', currentCode: string) => {
     try {
-      const res = await fetch('/api/settings', {
+      const baseUrl = 'https://serve-happiness.vercel.app';
+      const res = await fetch(`${baseUrl}/api/support/ticket`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          caseId: currentCode,
+          name: name.trim(),
+          email: email.trim(),
+          whatsapp: whatsapp.trim(),
+          program,
+          message: message.trim(),
+          type: payloadType,
+        }),
       });
 
-      if (!res.ok) throw new Error('Error al sincronizar');
-      showToast('Configuración sincronizada en SERVE Core.');
-    } catch {
-      showToast('Error al conectar con la base de datos.');
-    } finally {
-      setIsSaving(false);
+      const data = await res.json();
+      console.log('Respuesta Telegram API:', data);
+    } catch (e) {
+      console.error('Error al notificar a Telegram', e);
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !program || !message.trim()) return;
+
+    const code = 'PST-' + Math.random().toString(36).slice(2, 7).toUpperCase();
+    setCaseId(code);
+    setSubmittedName(name.trim().split(/\s+/)[0]);
+    setSubmittedProgram(program);
+    setBotAnswer(getBotOrientation(message));
+    setStatus('initial');
+    setHasSubmitted(true);
+
+    notifyTelegram('ticket', code);
+    showToast('Solicitud enviada al equipo.');
   };
 
   return (
     <main
       style={{
         minHeight: '100vh',
-        backgroundColor: '#0B0A09',
-        backgroundImage: 'radial-gradient(ellipse at 20% 0%, rgba(184, 154, 96, 0.08) 0%, transparent 60%)',
-        color: '#E8E1DA',
-        fontFamily: 'Inter, -apple-system, sans-serif',
-        display: 'flex',
+        backgroundColor: '#060b14',
+        color: '#f0f6fc',
+        fontFamily: 'Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link
-        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Rajdhani:wght@600;700;800&display=swap"
-        rel="stylesheet"
-      />
-
-      {/* BARRA LATERAL */}
-      <aside
+      <div
         style={{
-          width: '270px',
-          borderRight: '1px solid rgba(184, 154, 96, 0.16)',
-          backgroundColor: '#0E0D0B',
-          padding: '30px 20px',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
+          backgroundColor: '#08101e',
+          borderBottom: '1px solid #16243d',
+          color: '#70b8ff',
+          textAlign: 'center',
+          padding: '8px 16px',
+          fontSize: '11px',
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
         }}
       >
-        <div>
-          {/* Logo SERVE */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '40px' }}>
-            <svg viewBox="0 0 100 120" fill="none" style={{ width: '30px', height: '36px', flexShrink: 0 }}>
-              <path d="M50 0L65 30H55V110L50 120L45 110V30H35L50 0Z" fill="url(#goldGradient)" />
-              <path d="M20 40H75V55H38V70H75V100H20V85H62V70H20V40Z" fill="url(#goldGradient)" />
-              <defs>
-                <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#D8BC83" />
-                  <stop offset="100%" stopColor="#B89A60" />
-                </linearGradient>
-              </defs>
-            </svg>
-            <div>
-              <div
-                style={{
-                  fontSize: '20px',
-                  fontWeight: 800,
-                  letterSpacing: '0.24em',
-                  color: '#D8BC83',
-                  lineHeight: 1,
-                  fontFamily: 'Rajdhani, sans-serif',
-                }}
-              >
-                SERVE
-              </div>
-              <div
-                style={{
-                  fontSize: '7px',
-                  fontWeight: 700,
-                  letterSpacing: '0.22em',
-                  color: '#8C857B',
-                  marginTop: '5px',
-                  lineHeight: 1,
-                  textTransform: 'uppercase',
-                }}
-              >
-                Servicios Empresariales de Élite
-              </div>
-            </div>
-          </div>
+        <span style={{ color: '#00a2ff', marginRight: '6px' }}>PRO SALES TRAINING</span> El mejor entrenamiento en ventas de habla hispana
+      </div>
 
-          <nav style={{ display: 'grid', gap: '6px' }}>
-            {[
-              { id: 'overview', label: 'Resumen Operativo', icon: '📊' },
-              { id: 'settings', label: 'Configuración Tenant', icon: '⚙️' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id as any)}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '11px 14px',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  border: 'none',
-                  backgroundColor: activeTab === tab.id ? 'rgba(184, 154, 96, 0.12)' : 'transparent',
-                  color: activeTab === tab.id ? '#D8BC83' : '#8C857B',
-                  boxShadow: activeTab === tab.id ? 'inset 0 0 0 1px rgba(184, 154, 96, 0.35)' : 'none',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <span style={{ fontSize: '14px' }}>{tab.icon}</span>
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        <div
-          style={{
-            padding: '14px',
-            backgroundColor: '#141310',
-            border: '1px solid rgba(184, 154, 96, 0.2)',
-            borderRadius: '10px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-            <span style={{ fontSize: '9px', fontWeight: 800, color: '#B89A60', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Tenant Activo
-            </span>
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#68B388', boxShadow: '0 0 6px #68B388' }} />
-          </div>
-          <div style={{ fontSize: '12px', color: '#E8E1DA', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {isLoading ? 'Cargando...' : clientName || 'Sin asignar'}
-          </div>
-          <div style={{ fontSize: '10px', color: '#6A6358', fontFamily: 'monospace', marginTop: '2px' }}>
-            ID: {companyId}
-          </div>
-        </div>
-      </aside>
-
-      {/* ÁREA DE CONTENIDO */}
-      <section style={{ flex: 1, padding: '36px 44px', overflowY: 'auto' }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '36px',
-            borderBottom: '1px solid rgba(184, 154, 96, 0.16)',
-            paddingBottom: '22px',
-          }}
-        >
+      <header
+        style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          height: '80px',
+          padding: '0 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid #101c31',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <img
+            src="/logo-circular.png"
+            alt="Pro Sales Training"
+            style={{
+              width: '46px',
+              height: '46px',
+              objectFit: 'contain',
+              display: 'block',
+            }}
+          />
           <div>
+            <div style={{ fontSize: '20px', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em' }}>
+              <span
+                style={{
+                  background: 'linear-gradient(135deg, #0076f5 0%, #00b4ff 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                PRO
+              </span>{' '}
+              <span style={{ color: '#ffffff' }}>SALES</span>
+            </div>
             <div
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontSize: '10px',
+                marginTop: '4px',
+                fontSize: '9px',
                 fontWeight: 800,
-                letterSpacing: '0.2em',
-                color: '#B89A60',
-                textTransform: 'uppercase',
-                marginBottom: '8px',
+                letterSpacing: '0.34em',
+                color: '#00a2ff',
+                lineHeight: 1,
               }}
             >
-              <span>SISTEMA</span> · <span>ESTRATEGIA</span> · <span>RESULTADOS</span>
+              TRAINING
             </div>
-            <h1
-              style={{
-                fontSize: '28px',
-                fontWeight: 800,
-                margin: 0,
-                color: '#E8E1DA',
-                fontFamily: 'Rajdhani, sans-serif',
-                letterSpacing: '0.04em',
-              }}
-            >
-              CENTRO DE MANDO OPERATIVO
-            </h1>
           </div>
+        </div>
 
-          <a
-            href={`/experiences/${companyId}`}
-            target="_blank"
-            rel="noopener noreferrer"
+        <a
+          href="https://us02web.zoom.us/j/9272409073?pwd=feP7nGIvZidKJBcqb6v3roewaQrQX1.1"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'linear-gradient(135deg, #0076f5 0%, #00a8ff 100%)',
+            color: '#ffffff',
+            textDecoration: 'none',
+            padding: '9px 16px',
+            borderRadius: '10px',
+            fontSize: '12px',
+            fontWeight: 800,
+            boxShadow: '0 4px 16px rgba(0, 118, 245, 0.35)',
+          }}
+        >
+          <span
             style={{
-              fontSize: '12px',
-              fontWeight: 700,
-              color: '#0B0A09',
-              background: 'linear-gradient(135deg, #D8BC83 0%, #B89A60 100%)',
-              border: 'none',
-              padding: '11px 20px',
-              borderRadius: '6px',
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              boxShadow: '0 4px 16px rgba(184, 154, 96, 0.25)',
+              width: '7px',
+              height: '7px',
+              borderRadius: '50%',
+              backgroundColor: '#22c55e',
+              boxShadow: '0 0 8px #22c55e',
+            }}
+          />
+          Sala de Zoom
+        </a>
+      </header>
+
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '38px 24px 72px' }}>
+        <section style={{ marginBottom: '34px' }}>
+          <span
+            style={{
+              display: 'inline-block',
+              fontSize: '11px',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.15em',
+              color: '#00a2ff',
+              backgroundColor: 'rgba(0, 118, 245, 0.12)',
+              border: '1px solid rgba(0, 162, 255, 0.28)',
+              padding: '5px 14px',
+              borderRadius: '99px',
+              marginBottom: '14px',
             }}
           >
-            ↗ Probar Experiencia de Alumno
-          </a>
-        </div>
-
-        {activeTab === 'overview' && (
-          <div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px', marginBottom: '28px' }}>
-              {[
-                { label: 'Tickets Gestionados', val: '128', change: '+24%' },
-                { label: 'Tasa de Autoresolución', val: '74.2%', change: '+8.1%' },
-                { label: 'Escalados a Mentores', val: '19', change: '-5%' },
-                { label: 'Tiempo Promedio', val: '3m 12s', change: 'Óptimo' },
-              ].map((card, i) => (
-                <div
-                  key={i}
-                  style={{
-                    backgroundColor: '#161411',
-                    border: '1px solid rgba(184, 154, 96, 0.2)',
-                    borderRadius: '10px',
-                    padding: '22px',
-                  }}
-                >
-                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#8C857B', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                    {card.label}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: '32px',
-                      fontWeight: 800,
-                      color: '#D8BC83',
-                      margin: '10px 0 6px',
-                      fontFamily: 'Rajdhani, sans-serif',
-                    }}
-                  >
-                    {card.val}
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#68B388', fontWeight: 600 }}>{card.change}</div>
-                </div>
-              ))}
-            </div>
-
-            <div
+            Acompañamiento Comercial Activo
+          </span>
+          <h1 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 900, margin: '0 0 10px', color: '#ffffff' }}>
+            Soporte Operativo ·{' '}
+            <span
               style={{
-                backgroundColor: '#161411',
-                border: '1px solid rgba(184, 154, 96, 0.2)',
-                borderRadius: '10px',
-                padding: '28px',
+                background: 'linear-gradient(135deg, #0076f5 0%, #00a8ff 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
               }}
             >
-              <h3 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 4px', color: '#E8E1DA' }}>
-                Monitoreo Multitenant
-              </h3>
-              <p style={{ margin: 0, fontSize: '12px', color: '#8C857B', lineHeight: 1.6 }}>
-                Base de datos activa con Supabase. Las configuraciones registradas en la pestaña «Configuración Tenant» se aplicarán inmediatamente a los alumnos que ingresen con el ID <code style={{ color: '#D8BC83' }}>{companyId}</code>.
-              </p>
-            </div>
-          </div>
-        )}
+              Pro Sales Training
+            </span>
+          </h1>
+          <p style={{ color: '#8b9bb4', fontSize: '15px', lineHeight: 1.6, margin: 0, maxWidth: '720px' }}>
+            El mejor entrenamiento en ventas de habla hispana. Plantea tus dudas sobre cierres, roleplays en vivo con el equipo de Marcelo Gutierrez o reporta incidentes de acceso.
+          </p>
+        </section>
 
-        {activeTab === 'settings' && (
-          <form onSubmit={handleSave}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: '24px',
+            alignItems: 'start',
+          }}
+        >
+          <section>
+            <div
+              style={{
+                backgroundColor: '#0f192d',
+                border: '1px solid #1a2a47',
+                borderRadius: '14px',
+                padding: '30px',
+                boxShadow: '0 16px 36px -12px rgba(0, 0, 0, 0.7)',
+                position: 'relative',
+              }}
+            >
               <div
                 style={{
-                  backgroundColor: '#161411',
-                  border: '1px solid rgba(184, 154, 96, 0.2)',
-                  borderRadius: '10px',
-                  padding: '26px',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '3px',
+                  background: 'linear-gradient(135deg, #0076f5 0%, #00a8ff 100%)',
                 }}
-              >
-                <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 18px', color: '#D8BC83' }}>
-                  1. IDENTIDAD DE LA ACADEMIA CLIENTE
-                </h3>
+              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '24px' }}>
+                <div
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '10px',
+                    backgroundColor: 'rgba(0, 118, 245, 0.12)',
+                    border: '1px solid rgba(0, 162, 255, 0.28)',
+                    color: '#00a2ff',
+                    fontWeight: 900,
+                    fontSize: '14px',
+                    display: 'grid',
+                    placeItems: 'center',
+                  }}
+                >
+                  01
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 4px', color: '#ffffff' }}>
+                    Abre una solicitud
+                  </h2>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#8b9bb4' }}>
+                    Selecciona tu programa para derivar tu caso con la prioridad correcta.
+                  </p>
+                </div>
+              </div>
 
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#8C857B', textTransform: 'uppercase', marginBottom: '6px' }}>
-                    Nombre Comercial
+              <form onSubmit={handleSubmit}>
+                <div style={{ marginBottom: '18px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '8px', color: '#d1dced' }}>
+                    Programa o Mentoría activa
                   </label>
-                  <input
-                    type="text"
-                    value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
-                    placeholder="Ej: Pro Sales Training"
+                  <select
+                    value={program}
+                    onChange={(e) => setProgram(e.target.value)}
+                    required
                     style={{
                       width: '100%',
-                      boxSizing: 'border-box',
-                      backgroundColor: '#0E0D0B',
-                      border: '1px solid rgba(184, 154, 96, 0.25)',
-                      borderRadius: '6px',
-                      padding: '11px 14px',
-                      color: '#E8E1DA',
-                      fontSize: '13px',
+                      border: '1px solid #1a2a47',
+                      borderRadius: '11px',
+                      backgroundColor: '#081120',
+                      padding: '13px 15px',
+                      color: '#ffffff',
                       outline: 'none',
+                      fontSize: '13px',
                     }}
-                  />
+                  >
+                    <option value="" disabled>Selecciona tu programa…</option>
+                    {PROGRAM_CATALOG.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
                 </div>
 
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#8C857B', textTransform: 'uppercase', marginBottom: '6px' }}>
-                    Eslogan o Subtítulo
-                  </label>
-                  <input
-                    type="text"
-                    value={tagline}
-                    onChange={(e) => setTagline(e.target.value)}
-                    style={{
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      backgroundColor: '#0E0D0B',
-                      border: '1px solid rgba(184, 154, 96, 0.25)',
-                      borderRadius: '6px',
-                      padding: '11px 14px',
-                      color: '#E8E1DA',
-                      fontSize: '13px',
-                      outline: 'none',
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px', marginBottom: '16px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#8C857B', textTransform: 'uppercase', marginBottom: '6px' }}>
-                      Color de Marca
-                    </label>
-                    <input
-                      type="color"
-                      value={clientBrandColor}
-                      onChange={(e) => setClientBrandColor(e.target.value)}
-                      style={{
-                        width: '100%',
-                        height: '40px',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        backgroundColor: '#0E0D0B',
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#8C857B', textTransform: 'uppercase', marginBottom: '6px' }}>
-                      Ruta o URL del Logotipo
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                    columnGap: '14px',
+                    rowGap: '16px',
+                    marginBottom: '18px',
+                  }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '8px', color: '#d1dced' }}>
+                      Nombre y Apellido
                     </label>
                     <input
                       type="text"
-                      value={clientLogoUrl}
-                      onChange={(e) => setClientLogoUrl(e.target.value)}
+                      placeholder="Tu nombre completo"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
                       style={{
                         width: '100%',
                         boxSizing: 'border-box',
-                        backgroundColor: '#0E0D0B',
-                        border: '1px solid rgba(184, 154, 96, 0.25)',
-                        borderRadius: '6px',
-                        padding: '11px 14px',
-                        color: '#E8E1DA',
-                        fontSize: '13px',
+                        border: '1px solid #1a2a47',
+                        borderRadius: '11px',
+                        backgroundColor: '#081120',
+                        padding: '13px 15px',
+                        color: '#ffffff',
                         outline: 'none',
+                        fontSize: '13px',
+                      }}
+                    />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '8px', color: '#d1dced' }}>
+                      Correo en Whop
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="correo@ejemplo.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      style={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        border: '1px solid #1a2a47',
+                        borderRadius: '11px',
+                        backgroundColor: '#081120',
+                        padding: '13px 15px',
+                        color: '#ffffff',
+                        outline: 'none',
+                        fontSize: '13px',
+                      }}
+                    />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '8px', color: '#d1dced' }}>
+                      WhatsApp (con código país)
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="+52 55 1234 5678"
+                      value={whatsapp}
+                      onChange={(e) => setWhatsapp(e.target.value)}
+                      required
+                      style={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        border: '1px solid #1a2a47',
+                        borderRadius: '11px',
+                        backgroundColor: '#081120',
+                        padding: '13px 15px',
+                        color: '#ffffff',
+                        outline: 'none',
+                        fontSize: '13px',
                       }}
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#8C857B', textTransform: 'uppercase', marginBottom: '6px' }}>
-                    Enlace de Sala Zoom / Videollamadas
-                  </label>
-                  <input
-                    type="url"
-                    value={zoomUrl}
-                    onChange={(e) => setZoomUrl(e.target.value)}
-                    style={{
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      backgroundColor: '#0E0D0B',
-                      border: '1px solid rgba(184, 154, 96, 0.25)',
-                      borderRadius: '6px',
-                      padding: '11px 14px',
-                      color: '#E8E1DA',
-                      fontSize: '13px',
-                      outline: 'none',
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div
-                style={{
-                  backgroundColor: '#161411',
-                  border: '1px solid rgba(184, 154, 96, 0.2)',
-                  borderRadius: '10px',
-                  padding: '26px',
-                }}
-              >
-                <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 18px', color: '#D8BC83' }}>
-                  2. ENRUTAMIENTO TELEGRAM & CATEGORÍAS
-                </h3>
-
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#8C857B', textTransform: 'uppercase', marginBottom: '6px' }}>
-                    Telegram Chat ID Destino
-                  </label>
-                  <input
-                    type="text"
-                    value={telegramChatId}
-                    onChange={(e) => setTelegramChatId(e.target.value)}
-                    style={{
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      backgroundColor: '#0E0D0B',
-                      border: '1px solid rgba(184, 154, 96, 0.25)',
-                      borderRadius: '6px',
-                      padding: '11px 14px',
-                      color: '#E8E1DA',
-                      fontSize: '13px',
-                      outline: 'none',
-                    }}
-                  />
-                </div>
-
-                <div style={{ marginBottom: '18px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: '#E8E1DA', cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={enableEscalationAlerts}
-                      onChange={(e) => setEnableEscalationAlerts(e.target.checked)}
-                      style={{ accentColor: '#B89A60' }}
-                    />
-                    Emitir alerta con alta prioridad cuando el estudiante escale a un mentor
-                  </label>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#8C857B', textTransform: 'uppercase', marginBottom: '6px' }}>
-                    Opciones de Triage para el Alumno (1 por línea)
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '8px', color: '#d1dced' }}>
+                    Detalle de tu consulta o bloqueo comercial
                   </label>
                   <textarea
                     rows={4}
-                    value={programsText}
-                    onChange={(e) => setProgramsText(e.target.value)}
+                    placeholder="Ej: Tengo una objeción recurrente de presupuesto o requiero soporte con las grabaciones del entrenamiento…"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    required
                     style={{
                       width: '100%',
                       boxSizing: 'border-box',
-                      backgroundColor: '#0E0D0B',
-                      border: '1px solid rgba(184, 154, 96, 0.25)',
-                      borderRadius: '6px',
-                      padding: '11px 14px',
-                      color: '#E8E1DA',
-                      fontSize: '13px',
+                      border: '1px solid #1a2a47',
+                      borderRadius: '11px',
+                      backgroundColor: '#081120',
+                      padding: '13px 15px',
+                      color: '#ffffff',
                       outline: 'none',
+                      fontSize: '13px',
                       resize: 'vertical',
                     }}
                   />
+
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#72849e', margin: '10px 0 8px', textTransform: 'uppercase' }}>
+                    Consultas habituales de alumnos:
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {[
+                      { label: 'Feedback de Pitch', val: 'Revisión y feedback para mi pitch de prospección en frío' },
+                      { label: 'Horario de Roleplay', val: '¿Cuál es el calendario de las próximas sesiones de roleplay en vivo?' },
+                      { label: 'Acceso a Grabaciones', val: 'Problema de visualización en las grabaciones de Whop' },
+                      { label: 'Objeción de Socio', val: 'El prospecto me dice que lo tiene que pensar con su socio, ¿cómo lo destrabo?' },
+                    ].map((btn) => (
+                      <button
+                        type="button"
+                        key={btn.label}
+                        onClick={() => setMessage(btn.val)}
+                        style={{
+                          border: '1px solid #1a2944',
+                          borderRadius: '99px',
+                          padding: '5px 11px',
+                          backgroundColor: '#081120',
+                          color: '#9cb0cc',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {btn.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  style={{
+                    width: '100%',
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #0076f5 0%, #00a8ff 100%)',
+                    color: '#ffffff',
+                    padding: '15px 20px',
+                    borderRadius: '12px',
+                    fontWeight: 800,
+                    fontSize: '13px',
+                    letterSpacing: '0.02em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    boxShadow: '0 6px 18px rgba(0, 118, 245, 0.35)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Enviar Solicitud
+                </button>
+              </form>
+            </div>
+
+            {hasSubmitted && (
+              <div
+                style={{
+                  marginTop: '24px',
+                  backgroundColor: '#091222',
+                  border: '1px solid #1a2a47',
+                  borderRadius: '14px',
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    padding: '16px 20px',
+                    backgroundColor: '#0d1a31',
+                    borderBottom: '1px solid #1a2a47',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                  }}
+                >
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 2px', color: '#fff' }}>
+                      Solicitud registrada para {submittedName}
+                    </h3>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#8b9bb4' }}>
+                      {submittedProgram} · ID: {experienceId}
+                    </p>
+                  </div>
+                  <span
+                    style={{
+                      fontFamily: 'monospace',
+                      color: '#00a2ff',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      backgroundColor: 'rgba(0, 118, 245, 0.12)',
+                      border: '1px solid rgba(0, 162, 255, 0.28)',
+                      padding: '5px 10px',
+                      borderRadius: '8px',
+                    }}
+                  >
+                    {caseId}
+                  </span>
+                </div>
+
+                <div style={{ padding: '20px' }}>
+                  <div
+                    style={{
+                      backgroundColor: '#0d1b33',
+                      border: '1px solid #1c3257',
+                      borderRadius: '8px',
+                      padding: '15px',
+                      fontSize: '13px',
+                      lineHeight: 1.6,
+                      marginBottom: '16px',
+                      color: '#dbe7f7',
+                    }}
+                  >
+                    <div style={{ color: '#00a2ff', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', marginBottom: '6px' }}>
+                      Pro Sales Training · Respuesta
+                    </div>
+                    {botAnswer}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStatus('resolved');
+                        notifyTelegram('resolved', caseId);
+                        showToast('Caso marcado como resuelto.');
+                      }}
+                      style={{
+                        backgroundColor: '#111d33',
+                        border: '1px solid #1d2f4d',
+                        color: status === 'resolved' ? '#34d399' : '#e2ecf9',
+                        borderRadius: '9px',
+                        padding: '9px 14px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      ✓ Duda Aclarada
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStatus('escalated');
+                        notifyTelegram('escalation', caseId);
+                        showToast('Ticket transferido al equipo docente.');
+                      }}
+                      style={{
+                        backgroundColor: '#111d33',
+                        border: '1px solid #1d2f4d',
+                        color: status === 'escalated' ? '#fbbf24' : '#e2ecf9',
+                        borderRadius: '9px',
+                        padding: '9px 14px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Escalar a Mentor Humano
+                    </button>
+                  </div>
+
+                  {status === 'resolved' && (
+                    <div
+                      style={{
+                        marginTop: '16px',
+                        backgroundColor: '#071d15',
+                        border: '1px solid #144934',
+                        borderRadius: '10px',
+                        padding: '14px',
+                        fontSize: '12px',
+                        lineHeight: 1.5,
+                        color: '#6ee7b7',
+                      }}
+                    >
+                      <strong style={{ color: '#34d399', display: 'block', marginBottom: '4px' }}>
+                        ¡Consulta aclarada con éxito!
+                      </strong>
+                      Has confirmado que la orientación resolvió tu duda. El registro ha sido actualizado para el equipo docente.
+                    </div>
+                  )}
+
+                  {status === 'escalated' && (
+                    <div
+                      style={{
+                        marginTop: '16px',
+                        backgroundColor: '#1a1506',
+                        border: '1px solid #3d2b07',
+                        borderRadius: '10px',
+                        padding: '14px',
+                        fontSize: '12px',
+                        lineHeight: 1.5,
+                        color: '#e2c56a',
+                      }}
+                    >
+                      <strong style={{ color: '#fbbf24', display: 'block', marginBottom: '4px' }}>
+                        Ticket transferido al equipo docente de Pro Sales Training
+                      </strong>
+                      Tu consulta ha entrado a la cola de atención comercial prioritaria. La revisaremos directamente con Marcelo Gutierrez o en la siguiente sesión de práctica en Zoom.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </section>
+
+          <aside style={{ display: 'grid', gap: '20px' }}>
+            <div
+              style={{
+                backgroundColor: '#0f192d',
+                border: '1px solid #1a2a47',
+                borderRadius: '14px',
+                padding: '24px',
+              }}
+            >
+              <div
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(0, 118, 245, 0.12)',
+                  border: '1px solid rgba(0, 162, 255, 0.28)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  color: '#00a2ff',
+                  marginBottom: '14px',
+                }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{ width: '18px', height: '18px' }}>
+                  <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z" />
+                </svg>
+              </div>
+              <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 6px', color: '#ffffff' }}>
+                Atención & Roleplays
+              </h3>
+              <p style={{ fontSize: '13px', lineHeight: 1.55, color: '#8b9bb4', margin: 0 }}>
+                Acompañamiento táctico para acelerar tu conversión en llamadas, destrabar objeciones complejas y dominar cierres de alto valor.
+              </p>
+            </div>
+
+            <div
+              style={{
+                backgroundColor: '#0f192d',
+                border: '1px solid #1a2a47',
+                borderRadius: '14px',
+                padding: '24px',
+              }}
+            >
+              <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 16px', color: '#ffffff' }}>
+                Ruta de tu consulta
+              </h3>
+              <div style={{ display: 'grid', gap: '16px' }}>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#0076f5', marginTop: '3px' }} />
+                  <div>
+                    <strong style={{ fontSize: '12px', display: 'block', color: '#f0f6fc' }}>Registro del caso</strong>
+                    <small style={{ fontSize: '11px', color: '#8b9bb4' }}>Indexado con tu perfil de Whop</small>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#0076f5', marginTop: '3px' }} />
+                  <div>
+                    <strong style={{ fontSize: '12px', display: 'block', color: '#f0f6fc' }}>Diagnóstico táctico</strong>
+                    <small style={{ fontSize: '11px', color: '#8b9bb4' }}>Guías y mejores prácticas</small>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#1a2a47', marginTop: '3px' }} />
+                  <div>
+                    <strong style={{ fontSize: '12px', display: 'block', color: '#f0f6fc' }}>Intervención de Mentor</strong>
+                    <small style={{ fontSize: '11px', color: '#8b9bb4' }}>Revisión en vivo vía Zoom</small>
+                  </div>
                 </div>
               </div>
             </div>
-
-            <div style={{ marginTop: '28px', display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                type="submit"
-                disabled={isSaving}
-                style={{
-                  background: 'linear-gradient(135deg, #D8BC83 0%, #B89A60 100%)',
-                  color: '#0B0A09',
-                  border: 'none',
-                  padding: '12px 30px',
-                  borderRadius: '6px',
-                  fontSize: '13px',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 16px rgba(184, 154, 96, 0.3)',
-                }}
-              >
-                {isSaving ? 'Guardando en SERVE...' : 'GUARDAR CONFIGURACIÓN TENANT'}
-              </button>
-            </div>
-          </form>
-        )}
-      </section>
+          </aside>
+        </div>
+      </div>
 
       {toastMessage && (
         <div
           style={{
             position: 'fixed',
             bottom: '24px',
-            right: '24px',
-            backgroundColor: '#161411',
-            border: '1px solid #B89A60',
-            color: '#E8E1DA',
-            padding: '12px 22px',
-            borderRadius: '6px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: '#14223b',
+            border: '1px solid #20355a',
+            color: '#ffffff',
+            padding: '10px 20px',
+            borderRadius: '10px',
             fontSize: '12px',
             fontWeight: 700,
-            boxShadow: '0 10px 30px rgba(0,0,0,0.8)',
+            boxShadow: '0 12px 30px -10px rgba(0,0,0,0.6)',
             zIndex: 100,
           }}
         >

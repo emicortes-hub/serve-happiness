@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { useState, useEffect, use } from 'react';
 
 interface DashboardProps {
   params: Promise<{ companyId: string }>;
@@ -10,19 +10,18 @@ export default function ServeOperationsConsole(props: DashboardProps) {
   const resolvedParams = use(props.params);
   const companyId = resolvedParams.companyId;
 
-  // Configuración del Tenant
-  const [clientName, setClientName] = useState('Pro Sales Training');
-  const [tagline, setTagline] = useState('El mejor entrenamiento en ventas de habla hispana');
-  const [clientBrandColor, setClientBrandColor] = useState('#0076f5');
-  const [clientLogoUrl, setClientLogoUrl] = useState('/logo-circular.png');
-  const [zoomUrl, setZoomUrl] = useState('https://us02web.zoom.us/j/9272409073');
-  const [telegramChatId, setTelegramChatId] = useState('-10023456789');
+  // Estados de configuración del Tenant
+  const [clientName, setClientName] = useState('');
+  const [tagline, setTagline] = useState('');
+  const [clientBrandColor, setClientBrandColor] = useState('#B89A60');
+  const [clientLogoUrl, setClientLogoUrl] = useState('');
+  const [zoomUrl, setZoomUrl] = useState('');
+  const [telegramChatId, setTelegramChatId] = useState('');
   const [enableEscalationAlerts, setEnableEscalationAlerts] = useState(true);
-  const [programsText, setProgramsText] = useState(
-    'Módulo de Prospección en Frío\nObjeciones de Alto Valor\nRoleplays en Vivo con Mentores\nSoporte de Plataforma Whop'
-  );
+  const [programsText, setProgramsText] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'settings' | 'tenants'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'settings'>('overview');
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -31,27 +30,76 @@ export default function ServeOperationsConsole(props: DashboardProps) {
     setTimeout(() => setToastMessage(null), 3200);
   };
 
+  // Cargar configuración existente desde Supabase
+  useEffect(() => {
+    async function fetchTenantSettings() {
+      try {
+        const res = await fetch(`/api/settings?companyId=${companyId}`);
+        const data = await res.json();
+        if (data) {
+          setClientName(data.client_name || '');
+          setTagline(data.tagline || '');
+          setClientBrandColor(data.brand_color || '#B89A60');
+          setClientLogoUrl(data.logo_url || '');
+          setZoomUrl(data.zoom_url || '');
+          setTelegramChatId(data.telegram_chat_id || '');
+          setEnableEscalationAlerts(data.enable_escalation ?? true);
+          if (Array.isArray(data.programs)) {
+            setProgramsText(data.programs.join('\n'));
+          }
+        }
+      } catch (err) {
+        console.error('Error al obtener tenant:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchTenantSettings();
+  }, [companyId]);
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    setTimeout(() => {
+
+    const payload = {
+      companyId,
+      clientName,
+      tagline,
+      clientBrandColor,
+      clientLogoUrl,
+      zoomUrl,
+      telegramChatId,
+      enableEscalationAlerts,
+      programs: programsText.split('\n').filter((p) => p.trim().length > 0),
+    };
+
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error('Error al sincronizar');
+      showToast('Configuración sincronizada en SERVE Core.');
+    } catch {
+      showToast('Error al conectar con la base de datos.');
+    } finally {
       setIsSaving(false);
-      showToast('Configuración sincronizada en la red central de SERVE.');
-    }, 700);
+    }
   };
 
   return (
     <main
       style={{
         minHeight: '100vh',
-        backgroundColor: '#0B0A09', // Obsidian
+        backgroundColor: '#0B0A09',
         backgroundImage: 'radial-gradient(ellipse at 20% 0%, rgba(184, 154, 96, 0.08) 0%, transparent 60%)',
-        color: '#E8E1DA',           // Marfil
+        color: '#E8E1DA',
         fontFamily: 'Inter, -apple-system, sans-serif',
         display: 'flex',
       }}
     >
-      {/* Import de fuentes oficiales SERVE: Rajdhani y Manrope */}
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link
@@ -59,7 +107,7 @@ export default function ServeOperationsConsole(props: DashboardProps) {
         rel="stylesheet"
       />
 
-      {/* BARRA LATERAL (SIDEBAR) */}
+      {/* BARRA LATERAL */}
       <aside
         style={{
           width: '270px',
@@ -113,10 +161,6 @@ export default function ServeOperationsConsole(props: DashboardProps) {
             </div>
           </div>
 
-          {/* Menú de navegación */}
-          <div style={{ fontSize: '9px', fontWeight: 700, color: '#6A6358', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '10px', paddingLeft: '8px' }}>
-            Plataforma SaaS
-          </div>
           <nav style={{ display: 'grid', gap: '6px' }}>
             {[
               { id: 'overview', label: 'Resumen Operativo', icon: '📊' },
@@ -151,14 +195,12 @@ export default function ServeOperationsConsole(props: DashboardProps) {
           </nav>
         </div>
 
-        {/* Tenant activo */}
         <div
           style={{
             padding: '14px',
             backgroundColor: '#141310',
             border: '1px solid rgba(184, 154, 96, 0.2)',
             borderRadius: '10px',
-            background: 'linear-gradient(180deg, #181612 0%, #11100D 100%)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
@@ -168,7 +210,7 @@ export default function ServeOperationsConsole(props: DashboardProps) {
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#68B388', boxShadow: '0 0 6px #68B388' }} />
           </div>
           <div style={{ fontSize: '12px', color: '#E8E1DA', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {clientName || 'Sin asignar'}
+            {isLoading ? 'Cargando...' : clientName || 'Sin asignar'}
           </div>
           <div style={{ fontSize: '10px', color: '#6A6358', fontFamily: 'monospace', marginTop: '2px' }}>
             ID: {companyId}
@@ -178,7 +220,6 @@ export default function ServeOperationsConsole(props: DashboardProps) {
 
       {/* ÁREA DE CONTENIDO */}
       <section style={{ flex: 1, padding: '36px 44px', overflowY: 'auto' }}>
-        {/* Cabecera superior */}
         <div
           style={{
             display: 'flex',
@@ -242,15 +283,14 @@ export default function ServeOperationsConsole(props: DashboardProps) {
           </a>
         </div>
 
-        {/* PESTAÑA: RESUMEN ANALÍTICO */}
         {activeTab === 'overview' && (
           <div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px', marginBottom: '28px' }}>
               {[
-                { label: 'Tickets Gestionados', val: '128', change: '+24%', positive: true },
-                { label: 'Tasa de Autoresolución', val: '74.2%', change: '+8.1%', positive: true },
-                { label: 'Escalados a Mentores', val: '19', change: '-5%', positive: true },
-                { label: 'Tiempo Promedio de Respuesta', val: '3m 12s', change: 'Óptimo', positive: true },
+                { label: 'Tickets Gestionados', val: '128', change: '+24%' },
+                { label: 'Tasa de Autoresolución', val: '74.2%', change: '+8.1%' },
+                { label: 'Escalados a Mentores', val: '19', change: '-5%' },
+                { label: 'Tiempo Promedio', val: '3m 12s', change: 'Óptimo' },
               ].map((card, i) => (
                 <div
                   key={i}
@@ -259,7 +299,6 @@ export default function ServeOperationsConsole(props: DashboardProps) {
                     border: '1px solid rgba(184, 154, 96, 0.2)',
                     borderRadius: '10px',
                     padding: '22px',
-                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
                   }}
                 >
                   <div style={{ fontSize: '10px', fontWeight: 700, color: '#8C857B', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
@@ -281,56 +320,27 @@ export default function ServeOperationsConsole(props: DashboardProps) {
               ))}
             </div>
 
-            {/* Gráfica de Triage */}
             <div
               style={{
                 backgroundColor: '#161411',
                 border: '1px solid rgba(184, 154, 96, 0.2)',
                 borderRadius: '10px',
                 padding: '28px',
-                marginBottom: '28px',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 4px', color: '#E8E1DA' }}>
-                    Rendimiento de Atención Semanal
-                  </h3>
-                  <p style={{ margin: 0, fontSize: '12px', color: '#8C857B' }}>
-                    Distribución de consultas resueltas por el bot vs. transferidas al equipo humano.
-                  </p>
-                </div>
-                <span style={{ fontSize: '11px', color: '#D8BC83', border: '1px solid rgba(184, 154, 96, 0.3)', padding: '4px 10px', borderRadius: '4px' }}>
-                  Últimos 7 días
-                </span>
-              </div>
-
-              {/* Vector Sparkline */}
-              <div style={{ width: '100%', height: '120px', display: 'flex', alignItems: 'flex-end', gap: '14px', paddingTop: '20px' }}>
-                {[45, 62, 58, 80, 72, 95, 88].map((h, idx) => (
-                  <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                    <div
-                      style={{
-                        width: '100%',
-                        height: `${h}px`,
-                        background: 'linear-gradient(180deg, #D8BC83 0%, rgba(184, 154, 96, 0.15) 100%)',
-                        borderRadius: '4px 4px 0 0',
-                        borderTop: '2px solid #D8BC83',
-                      }}
-                    />
-                    <span style={{ fontSize: '10px', color: '#6A6358', fontFamily: 'monospace' }}>Día {idx + 1}</span>
-                  </div>
-                ))}
-              </div>
+              <h3 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 4px', color: '#E8E1DA' }}>
+                Monitoreo Multitenant
+              </h3>
+              <p style={{ margin: 0, fontSize: '12px', color: '#8C857B', lineHeight: 1.6 }}>
+                Base de datos activa con Supabase. Las configuraciones registradas en la pestaña «Configuración Tenant» se aplicarán inmediatamente a los alumnos que ingresen con el ID <code style={{ color: '#D8BC83' }}>{companyId}</code>.
+              </p>
             </div>
           </div>
         )}
 
-        {/* PESTAÑA: CONFIGURACIÓN MULTITENANT */}
         {activeTab === 'settings' && (
           <form onSubmit={handleSave}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
-              {/* Tarjeta 1 */}
               <div
                 style={{
                   backgroundColor: '#161411',
@@ -339,7 +349,7 @@ export default function ServeOperationsConsole(props: DashboardProps) {
                   padding: '26px',
                 }}
               >
-                <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 18px', color: '#D8BC83', letterSpacing: '0.04em' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 18px', color: '#D8BC83' }}>
                   1. IDENTIDAD DE LA ACADEMIA CLIENTE
                 </h3>
 
@@ -351,6 +361,7 @@ export default function ServeOperationsConsole(props: DashboardProps) {
                     type="text"
                     value={clientName}
                     onChange={(e) => setClientName(e.target.value)}
+                    placeholder="Ej: Pro Sales Training"
                     style={{
                       width: '100%',
                       boxSizing: 'border-box',
@@ -453,7 +464,6 @@ export default function ServeOperationsConsole(props: DashboardProps) {
                 </div>
               </div>
 
-              {/* Tarjeta 2 */}
               <div
                 style={{
                   backgroundColor: '#161411',
@@ -462,7 +472,7 @@ export default function ServeOperationsConsole(props: DashboardProps) {
                   padding: '26px',
                 }}
               >
-                <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 18px', color: '#D8BC83', letterSpacing: '0.04em' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 18px', color: '#D8BC83' }}>
                   2. ENRUTAMIENTO TELEGRAM & CATEGORÍAS
                 </h3>
 
@@ -496,7 +506,7 @@ export default function ServeOperationsConsole(props: DashboardProps) {
                       onChange={(e) => setEnableEscalationAlerts(e.target.checked)}
                       style={{ accentColor: '#B89A60' }}
                     />
-                    Emitir alerta de prioridad roja cuando el estudiante escale a un mentor
+                    Emitir alerta con alta prioridad cuando el estudiante escale a un mentor
                   </label>
                 </div>
 
@@ -538,7 +548,6 @@ export default function ServeOperationsConsole(props: DashboardProps) {
                   fontSize: '13px',
                   fontWeight: 800,
                   cursor: 'pointer',
-                  letterSpacing: '0.06em',
                   boxShadow: '0 4px 16px rgba(184, 154, 96, 0.3)',
                 }}
               >
