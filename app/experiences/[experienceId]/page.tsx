@@ -132,39 +132,19 @@ export default function StudentExperiencePage(props: PageProps) {
           borderBottom: '1px solid #101c31',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <img
+            src="/logo-circular.png"
+            alt="Pro Sales Training"
             style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #0076f5 0%, #00a8ff 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 0 16px rgba(0, 118, 245, 0.45)',
+              width: '46px',
+              height: '46px',
+              objectFit: 'contain',
+              display: 'block',
             }}
-          >
-            <svg
-              viewBox="0 0 24 24"
-              style={{
-                width: '22px',
-                height: '22px',
-                fill: 'none',
-                stroke: '#ffffff',
-                strokeWidth: 2.4,
-                strokeLinecap: 'round',
-                strokeLinejoin: 'round',
-              }}
-            >
-              <circle cx="12" cy="12" r="9" />
-              <polyline points="10 14 14 10 17 13" />
-              <line x1="8" y1="16" x2="16" y2="8" />
-              <polyline points="12 8 16 8 16 12" />
-            </svg>
-          </div>
+          />
           <div>
-            <div style={{ fontSize: '20px', fontWeight: 900, lineHeight: 1 }}>
+            <div style={{ fontSize: '20px', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em' }}>
               <span
                 style={{
                   background: 'linear-gradient(135deg, #0076f5 0%, #00b4ff 100%)',
@@ -178,14 +158,12 @@ export default function StudentExperiencePage(props: PageProps) {
             </div>
             <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
                 marginTop: '4px',
                 fontSize: '9px',
                 fontWeight: 800,
-                letterSpacing: '0.32em',
+                letterSpacing: '0.34em',
                 color: '#00a2ff',
+                lineHeight: 1,
               }}
             >
               TRAINING
