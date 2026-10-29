@@ -2,12 +2,23 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   typescript: {
-    // Ignora los errores de tipos durante la construcción en Vercel
     ignoreBuildErrors: true,
   },
   eslint: {
-    // Ignora advertencias de código durante la construcción
     ignoreDuringBuilds: true,
+  },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'self' https://whop.com https://*.whop.com;",
+          },
+        ],
+      },
+    ];
   },
 };
 
