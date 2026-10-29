@@ -11,33 +11,110 @@ export default async function StudentExperiencePage(props: PageProps) {
   const experienceId = params.experienceId;
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10">
-      <div className="max-w-4xl mx-auto">
-        <header className="mb-8">
-          <span className="text-xs uppercase tracking-wider text-blue-400 font-semibold bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
+    <main
+      style={{
+        minHeight: '100vh',
+        backgroundColor: '#020617',
+        color: '#f8fafc',
+        padding: '2.5rem 1.5rem',
+        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      }}
+    >
+      <div style={{ maxWidth: '896px', margin: '0 auto' }}>
+        <header style={{ marginBottom: '2rem' }}>
+          <span
+            style={{
+              display: 'inline-block',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              color: '#60a5fa',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              padding: '0.25rem 0.75rem',
+              borderRadius: '9999px',
+              border: '1px solid rgba(59, 130, 246, 0.2)',
+            }}
+          >
             Pro Sales Training Hub
           </span>
-          <h1 className="text-3xl font-bold mt-3">Mi espacio de ventas y soporte</h1>
-          <p className="text-slate-400 mt-1">Tu centro de acompañamiento directo con el equipo y recursos.</p>
+          <h1 style={{ fontSize: '1.875rem', fontWeight: 700, marginTop: '0.75rem', color: '#ffffff' }}>
+            Mi espacio de ventas y soporte
+          </h1>
+          <p style={{ color: '#94a3b8', marginTop: '0.25rem', fontSize: '0.95rem' }}>
+            Tu centro de acompañamiento directo con el equipo y recursos.
+          </p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-lg">
-            <h2 className="text-xl font-semibold mb-2">Mis Solicitudes</h2>
-            <p className="text-sm text-slate-400 mb-4">Revisa el estado de tus dudas y soporte técnico con los asesores.</p>
-            <button className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors">
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '1.5rem',
+          }}
+        >
+          {/* Tarjeta Solicitudes */}
+          <div
+            style={{
+              backgroundColor: '#0f172a',
+              border: '1px solid #1e293b',
+              padding: '1.5rem',
+              borderRadius: '1rem',
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+            }}
+          >
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem', color: '#ffffff' }}>
+              Mis Solicitudes
+            </h2>
+            <p style={{ fontSize: '0.875rem', color: '#94a3b8', marginBottom: '1.25rem', lineHeight: '1.4' }}>
+              Revisa el estado de tus dudas y soporte técnico con los asesores.
+            </p>
+            <button
+              style={{
+                backgroundColor: '#2563eb',
+                color: '#ffffff',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                padding: '0.5rem 1rem',
+                borderRadius: '0.75rem',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
               Nueva Solicitud
             </button>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-lg">
-            <h2 className="text-xl font-semibold mb-2">Sesiones en Vivo</h2>
-            <p className="text-sm text-slate-400 mb-4">Consulta los horarios de mentoría y accesos directos a Zoom.</p>
-            <a 
-              href="https://us02web.zoom.us/j/9272409073?pwd=feP7nGIvZidKJBcqb6v3roewaQrQX1.1" 
-              target="_blank" 
+          {/* Tarjeta Zoom */}
+          <div
+            style={{
+              backgroundColor: '#0f172a',
+              border: '1px solid #1e293b',
+              padding: '1.5rem',
+              borderRadius: '1rem',
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+            }}
+          >
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem', color: '#ffffff' }}>
+              Sesiones en Vivo
+            </h2>
+            <p style={{ fontSize: '0.875rem', color: '#94a3b8', marginBottom: '1.25rem', lineHeight: '1.4' }}>
+              Consulta los horarios de mentoría y accesos directos a Zoom.
+            </p>
+            <a
+              href="https://us02web.zoom.us/j/9272409073?pwd=feP7nGIvZidKJBcqb6v3roewaQrQX1.1"
+              target="_blank"
               rel="noopener noreferrer"
-              className="inline-block bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+              style={{
+                display: 'inline-block',
+                backgroundColor: '#2563eb',
+                color: '#ffffff',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                padding: '0.5rem 1rem',
+                borderRadius: '0.75rem',
+                textDecoration: 'none',
+              }}
             >
               Unirme a la Sala
             </a>
