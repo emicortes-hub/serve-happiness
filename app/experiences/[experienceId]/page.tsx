@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { useState, useEffect, use } from 'react';
 
 interface PageProps {
   params: Promise<{ companyId?: string; experienceId?: string }>;
@@ -16,20 +16,49 @@ const PROGRAM_CATALOG = [
 
 const FAQ_ITEMS = [
   {
-    q: '¿Dónde encuentro las grabaciones de las sesiones?',
-    a: 'Todas las llamadas y entrenamientos semanales se suben en la sección "Módulos y Grabaciones" dentro de Whop en un plazo máximo de 24 horas tras finalizar la sesión.',
+    q: '¿Dónde encuentro las grabaciones de las llamadas?',
+    a: 'Puedes acceder a todas las sesiones anteriores haciendo clic en la pestaña "GRABACIONES" en el menú de la izquierda. Se suben en menos de 24 horas tras cada sesión.',
   },
   {
-    q: '¿Cómo descargo los guiones y plantillas de prospección?',
-    a: 'Encuentras las hojas de cálculo, scripts de llamadas y plantillas de mensajes fijadas en la pestaña "Recursos" o en la descripción de cada módulo del programa.',
+    q: '¿Cómo me uno a los roleplays y sesiones en vivo?',
+    a: 'Ingresa a la pestaña "COACHING EN VIVO" en la barra lateral o haz clic directamente en el botón "Sala de Zoom" ubicado arriba.',
   },
   {
-    q: '¿Qué días y horas son los roleplays en vivo?',
-    a: 'Las dinámicas grupales de roleplay se llevan a cabo de lunes a jueves en la sala Zoom oficial. Consulta el horario fijado arriba y el calendario en Whop.',
+    q: '¿Dónde puedo interactuar con la comunidad y otros alumnos?',
+    a: 'Utiliza las pestañas "CHAT" para soporte diario y dinámicas del grupo, o "COMUNIDAD PRO" para hacer networking y compartir cierres con otros miembros.',
   },
   {
-    q: '¿Tengo problemas para acceder a un módulo específico?',
-    a: 'Selecciona "Dudas de Facturación o Acceso a Whop" en el formulario, indícanos tu correo de compra y el equipo docente te habilitará el acceso.',
+    q: '¿Dónde están los módulos del curso y materiales?',
+    a: 'Encuentras todo el contenido estructurado haciendo clic en la pestaña "PRO SALES TRAINING" en el menú principal.',
+  },
+  {
+    q: '¿Tengo problemas para ver o desbloquear algún contenido?',
+    a: 'Abre una solicitud desde el formulario de arriba indicando el correo con el que te diste de alta en Whop y el equipo docente te habilitará el acceso de inmediato.',
+  },
+];
+
+// Horarios base en Ciudad de México (hora central: UTC-6)
+const SESSIONS = [
+  {
+    title: 'PRO SCRIPT LAB',
+    day: 'Martes',
+    mexicoTime: '8:00 AM (CDMX)',
+    utcHour: 14, // 8 AM UTC-6 = 14:00 UTC
+    utcMinute: 0,
+  },
+  {
+    title: 'PRO HOT SEAT',
+    day: 'Miércoles',
+    mexicoTime: '7:00 PM (CDMX)',
+    utcHour: 1, // 7 PM UTC-6 = 01:00 UTC siguiente día
+    utcMinute: 0,
+  },
+  {
+    title: 'PRO ROLE PLAY',
+    day: 'Jueves',
+    mexicoTime: '8:00 AM (CDMX)',
+    utcHour: 14, // 8 AM UTC-6 = 14:00 UTC
+    utcMinute: 0,
   },
 ];
 
@@ -51,6 +80,15 @@ export default function ProSalesTrainingExperience(props: PageProps) {
   const [status, setStatus] = useState<'initial' | 'resolved' | 'escalated'>('initial');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [userTimeZone, setUserTimeZone] = useState<string>('');
+
+  useEffect(() => {
+    try {
+      setUserTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    } catch {
+      setUserTimeZone('Local');
+    }
+  }, []);
 
   const toggleFaq = (idx: number) => {
     setOpenFaq(openFaq === idx ? null : idx);
@@ -59,6 +97,18 @@ export default function ProSalesTrainingExperience(props: PageProps) {
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 2800);
+  };
+
+  // Convertidor de hora local según el navegador del estudiante
+  const getLocalSessionTime = (utcHour: number, utcMinute: number) => {
+    if (!userTimeZone) return '';
+    const now = new Date();
+    const utcDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), utcHour, utcMinute));
+    return new Intl.DateTimeFormat('es-MX', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).format(utcDate);
   };
 
   const getBotOrientation = (text: string) => {
@@ -70,10 +120,10 @@ export default function ProSalesTrainingExperience(props: PageProps) {
       return 'Si el prospecto menciona "lo tengo que pensar con mi socio", valida la objeción: "¿Si dependiera solo de ti, avanzarías hoy?". Aísla la causa real antes de cerrar la llamada y consulta el módulo de aislamiento de objeciones.';
     }
     if (/horario|calendario|sesion|sesión|roleplay|zoom|directo|vivo/.test(s)) {
-      return 'Nuestras sesiones y roleplays en directo se realizan mediante la sala oficial de Zoom (puedes ingresar directamente desde el botón superior). El calendario semanal detallado está en los anuncios fijados dentro de Whop.';
+      return 'Nuestras sesiones en directo se realizan mediante la sala oficial de Zoom: Martes (Script Lab 8:00 AM), Miércoles (Hot Seat 7:00 PM) y Jueves (Role Play 8:00 AM) Hora CDMX.';
     }
     if (/grabacion|grabaciones|acceso|drive|modulo|módulo/.test(s)) {
-      return 'Las grabaciones se indexan en tu sección de cursos en Whop dentro de las 24 horas siguientes a la llamada en vivo. Si tu suscripción no muestra los módulos actualizados, escala el ticket para sincronizar tu acceso.';
+      return 'Las grabaciones se indexan en la sección GRABACIONES dentro de Whop dentro de las 24 horas siguientes a la llamada en vivo. Si tu suscripción no muestra los módulos actualizados, escala el ticket para sincronizar tu acceso.';
     }
     return 'Hemos registrado tu consulta comercial. Te sugerimos revisar las plantillas del repositorio de Pro Sales Training; si requieres apoyo de un mentor para una llamada próxima, pulsa "Escalar a Mentor Humano".';
   };
@@ -218,49 +268,90 @@ export default function ProSalesTrainingExperience(props: PageProps) {
       </header>
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '38px 24px 72px' }}>
-        {/* HORARIO DE ZOOM VISIBLE */}
+        {/* BLOQUE DE HORARIOS DE SESIONES EN VIVO CON MARCELO GUTIERREZ */}
         <div
           style={{
             backgroundColor: '#0a1426',
             border: '1px solid #1a2f52',
-            borderRadius: '12px',
-            padding: '14px 20px',
-            marginBottom: '30px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            flexWrap: 'wrap',
+            borderRadius: '14px',
+            padding: '20px 24px',
+            marginBottom: '32px',
+            boxShadow: '0 8px 24px rgba(0, 118, 245, 0.1)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '18px' }}>⏰</span>
-            <div>
-              <strong style={{ fontSize: '12px', color: '#ffffff', display: 'block' }}>
-                Horarios oficiales de Sala Zoom y Roleplays en vivo
-              </strong>
-              <span style={{ fontSize: '11px', color: '#8b9bb4' }}>
-                Lunes a Jueves · 11:00 AM y 6:00 PM (Hora CDMX / GMT-6)
-              </span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '20px' }}>📅</span>
+              <div>
+                <strong style={{ fontSize: '14px', color: '#ffffff', display: 'block' }}>
+                  Sesiones en Vivo con Marcelo Gutierrez
+                </strong>
+                <span style={{ fontSize: '11px', color: '#8b9bb4' }}>
+                  Horario oficial fijado en Hora Ciudad de México (CDMX) · Sala de Zoom
+                </span>
+              </div>
             </div>
+            <a
+              href="https://us02web.zoom.us/j/9272409073?pwd=feP7nGIvZidKJBcqb6v3roewaQrQX1.1"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontSize: '11px',
+                fontWeight: 800,
+                color: '#00a2ff',
+                textDecoration: 'none',
+                padding: '7px 14px',
+                backgroundColor: 'rgba(0, 118, 245, 0.12)',
+                border: '1px solid rgba(0, 162, 255, 0.3)',
+                borderRadius: '8px',
+              }}
+            >
+              Entrar a la Sala ↗
+            </a>
           </div>
-          <a
-            href="https://us02web.zoom.us/j/9272409073?pwd=feP7nGIvZidKJBcqb6v3roewaQrQX1.1"
-            target="_blank"
-            rel="noopener noreferrer"
+
+          <div
             style={{
-              fontSize: '11px',
-              fontWeight: 800,
-              color: '#00a2ff',
-              textDecoration: 'none',
-              padding: '6px 12px',
-              backgroundColor: 'rgba(0, 118, 245, 0.12)',
-              border: '1px solid rgba(0, 162, 255, 0.3)',
-              borderRadius: '8px',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+              gap: '12px',
             }}
           >
-            Entrar ahora ↗
-          </a>
+            {SESSIONS.map((sess, idx) => {
+              const localTime = getLocalSessionTime(sess.utcHour, sess.utcMinute);
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    backgroundColor: '#081120',
+                    border: '1px solid #16243d',
+                    borderRadius: '10px',
+                    padding: '12px 14px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#00a2ff', textTransform: 'uppercase' }}>
+                      {sess.day}
+                    </span>
+                    <span style={{ fontSize: '10px', color: '#22c55e', fontWeight: 700 }}>
+                      ● En Vivo
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#ffffff', marginBottom: '4px' }}>
+                    {sess.title}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8' }}>
+                    🇲🇽 {sess.mexicoTime}
+                  </div>
+                  {localTime && (
+                    <div style={{ fontSize: '10px', color: '#60a5fa', marginTop: '2px' }}>
+                      🕒 Tu hora local: {localTime}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <section style={{ marginBottom: '34px' }}>
@@ -492,8 +583,8 @@ export default function ProSalesTrainingExperience(props: PageProps) {
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {[
                       { label: 'Feedback de Pitch', val: 'Revisión y feedback para mi pitch de prospección en frío' },
-                      { label: 'Horario de Roleplay', val: '¿Cuál es el calendario de las próximas sesiones de roleplay en vivo?' },
-                      { label: 'Acceso a Grabaciones', val: 'Problema de visualización en las grabaciones de Whop' },
+                      { label: 'Horario de Sesiones', val: '¿En qué días y horarios son las sesiones de Script Lab y Role Play?' },
+                      { label: 'Acceso a Grabaciones', val: 'Problema de visualización en la pestaña de grabaciones en Whop' },
                       { label: 'Objeción de Socio', val: 'El prospecto me dice que lo tiene que pensar con su socio, ¿cómo lo destrabo?' },
                     ].map((btn) => (
                       <button
@@ -684,7 +775,7 @@ export default function ProSalesTrainingExperience(props: PageProps) {
                       <strong style={{ color: '#fbbf24', display: 'block', marginBottom: '4px' }}>
                         Ticket transferido al equipo docente de Pro Sales Training
                       </strong>
-                      Tu consulta ha entrado a la cola de atención comercial prioritaria. La revisaremos directamente con Marcelo Gutierrez o en la siguiente sesión de práctica en Zoom.
+                      Tu consulta ha entrado a la cola de atención prioritaria. La revisaremos directamente con Marcelo Gutierrez o en la siguiente sesión en Zoom.
                     </div>
                   )}
                 </div>
