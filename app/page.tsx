@@ -1,10 +1,8 @@
 'use client';
 
 import React from 'react';
-import AIChatBox from '@/components/AIChatBox';
 
-// Coloca aquí la URL exacta de tu página de Whop de SERVE
-const SERVE_WHOP_URL = 'https://whop.com'; 
+const SERVE_WHOP_URL = 'https://whop.com/serve-8db4';
 
 export default function ServeLandingPage() {
   return (
@@ -134,7 +132,7 @@ export default function ServeLandingPage() {
           Infraestructura de soporte automatizado, gestión de incidentes y agentes tácticos de IA embebidos para comunidades de alto rendimiento en Whop.
         </p>
 
-        {/* Ambos botones dirigiendo al Whop de SERVE */}
+        {/* Botones conectados a tu Whop */}
         <div
           style={{
             display: 'flex',
@@ -144,7 +142,6 @@ export default function ServeLandingPage() {
             flexWrap: 'wrap',
           }}
         >
-          {/* Botón Principal */}
           <a
             href={SERVE_WHOP_URL}
             target="_blank"
@@ -175,7 +172,6 @@ export default function ServeLandingPage() {
             Explorar en Whop App Store ↗
           </a>
 
-          {/* Botón Secundario */}
           <a
             href={SERVE_WHOP_URL}
             target="_blank"
@@ -207,8 +203,6 @@ export default function ServeLandingPage() {
           </a>
         </div>
       </div>
-
-      <AIChatBox />
     </main>
   );
 }
