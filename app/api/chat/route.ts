@@ -21,17 +21,25 @@ Tu rol es responder como un mentor de ventas senior: directo, práctico y profes
 
 REGLAS CRÍTICAS:
 - Responde EXCLUSIVAMENTE en español.
-- NUNCA generes ni expongas notas de planificación, esquemas en inglés ("User input:", "Diagnosis:", "Persona:", "Constraints:"), ni razonamiento interno.
+- NUNCA generes ni expongas notas de planificación ni esquemas en inglés ("User input:", "Diagnosis:", "Persona:", etc.).
 - Tu salida debe ser directamente el mensaje final para el alumno.
-- Estructura exacta de tu respuesta:
+- Cuando pregunten sobre una objeción de venta:
   1. Diagnóstico breve de la objeción en una sola frase.
   2. Dos o tres opciones concretas de qué responder textualmente (entre comillas).
   3. Un consejo táctico de cierre.
-- Si preguntan por las sesiones en vivo: son martes y jueves a las 18:00 (Hora CDMX).
-- Si reportan fallos técnicos o pagos en Whop: indícales usar el formulario de soporte de la izquierda.
+
+CALENDARIO OFICIAL DE SESIONES EN VIVO (Con Marcelo Gutiérrez):
+Todas las sesiones son vía Zoom (Online):
+- Martes: "PRO SCRIPT LAB" a las 8:00 AM.
+- Miércoles: "PRO HOT SEAT" a las 7:00 PM.
+- Jueves: "PRO ROLE PLAY" a las 8:00 AM.
+(Si preguntan por el enlace de acceso, recuérdales que los links de Zoom están disponibles en el calendario de la comunidad de Whop / canal de anuncios).
+
+SOPORTE Y ACCESOS:
+- Para fallos técnicos, facturación o problemas de acceso en Whop, indícales utilizar el formulario contiguo para contactar a soporte humano.
     `.trim();
 
-    // Historial limpio excluyendo mensajes de error
+    // Historial limpio
     const contents = (history || [])
       .filter((msg: { role: string; content: string }) => !msg.content.startsWith('Aviso del sistema:'))
       .map((msg: { role: string; content: string }) => ({
@@ -52,14 +60,13 @@ REGLAS CRÍTICAS:
       generationConfig: {
         temperature: 0.4,
         maxOutputTokens: 800,
-        // Desactiva el modo de razonamiento interno para que solo devuelva la respuesta limpia
         thinkingConfig: {
           thinkingBudget: 0,
         },
       },
     };
 
-    // 1. Obtener los modelos disponibles
+    // Consultamos los modelos disponibles para la key
     const listRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
     );
@@ -73,7 +80,6 @@ REGLAS CRÍTICAS:
       .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
       .map((m: any) => m.name.replace(/^models\//, ''));
 
-    // Priorizar modelos estándar rápidos sobre los de razonamiento pesado
     const sortedModels = availableModels.sort((a, b) => {
       const isFlashA = a.includes('flash') && !a.includes('thinking');
       const isFlashB = b.includes('flash') && !b.includes('thinking');
@@ -95,29 +101,16 @@ REGLAS CRÍTICAS:
 
         if (res.ok && data.candidates?.[0]?.content?.parts) {
           const parts = data.candidates[0].content.parts;
-          
-          // Filtrar cualquier bloque que sea de razonamiento (thought) y tomar solo la respuesta real
           const nonThoughtParts = parts.filter((p: any) => !p.thought && p.text);
           const chosenPart = nonThoughtParts.length > 0 ? nonThoughtParts[nonThoughtParts.length - 1] : parts[parts.length - 1];
           let cleanReply = chosenPart?.text?.trim() || "";
-
-          // Si el texto incluye residuos de análisis inicial antes de la respuesta, limpiarlos
-          if (cleanReply.includes('Diagnóstico:') || cleanReply.includes('Opción 1:')) {
-            const cutIndex = Math.min(
-              cleanReply.indexOf('Diagnóstico:') !== -1 ? cleanReply.indexOf('Diagnóstico:') : Infinity,
-              cleanReply.indexOf('Opción 1:') !== -1 ? cleanReply.indexOf('Opción 1:') : Infinity
-            );
-            if (cutIndex !== Infinity && cutIndex > 0) {
-              cleanReply = cleanReply.substring(cutIndex).trim();
-            }
-          }
 
           if (cleanReply) {
             return NextResponse.json({ reply: cleanReply });
           }
         }
       } catch {
-        // Continuar con el siguiente modelo disponible
+        // Intentar siguiente modelo
       }
     }
 
