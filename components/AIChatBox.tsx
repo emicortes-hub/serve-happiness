@@ -13,7 +13,6 @@ const QUICK_PROMPTS = [
   '📅 "¿Cuándo son las sesiones de roleplay?"',
 ];
 
-// Renderizado de negritas doradas y cursivas Markdown
 function renderFormattedMessage(text: string) {
   const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
   return parts.map((part, index) => {
@@ -93,6 +92,20 @@ export default function AIChatBox() {
     }
   };
 
+  // Escuchar eventos globales desde los chips de la página principal
+  useEffect(() => {
+    const handleGlobalTrigger = (e: any) => {
+      const prompt = e.detail?.prompt;
+      setIsOpen(true);
+      if (prompt) {
+        setTimeout(() => executeSend(prompt), 150);
+      }
+    };
+
+    window.addEventListener('open-ai-chat', handleGlobalTrigger);
+    return () => window.removeEventListener('open-ai-chat', handleGlobalTrigger);
+  }, [messages, loading]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     executeSend(input);
@@ -106,7 +119,6 @@ export default function AIChatBox() {
 
   return (
     <>
-      {/* Estilos CSS embebidos para animaciones y scrollbar */}
       <style jsx global>{`
         @keyframes subtleHalo {
           0% {
@@ -155,7 +167,6 @@ export default function AIChatBox() {
           alignItems: 'flex-end',
         }}
       >
-        {/* Ventana de Chat Desplegable */}
         {isOpen && (
           <div
             style={{
@@ -172,7 +183,6 @@ export default function AIChatBox() {
               marginBottom: '14px',
             }}
           >
-            {/* Acento dorado superior */}
             <div
               style={{
                 height: '3px',
@@ -259,7 +269,7 @@ export default function AIChatBox() {
               </button>
             </div>
 
-            {/* Historial de Mensajes con Scrollbar delgada */}
+            {/* Historial */}
             <div
               className="ai-chat-scroll"
               style={{
@@ -308,7 +318,6 @@ export default function AIChatBox() {
                     {m.role === 'assistant' ? renderFormattedMessage(m.content) : m.content}
                   </div>
 
-                  {/* Botón Copiar para mensajes del asistente */}
                   {m.role === 'assistant' && idx !== 0 && (
                     <button
                       onClick={() => handleCopy(m.content, idx)}
@@ -331,7 +340,6 @@ export default function AIChatBox() {
                 </div>
               ))}
 
-              {/* Animación de 3 Puntos Pulsantes */}
               {loading && (
                 <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
                   <div
@@ -378,7 +386,7 @@ export default function AIChatBox() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Chips de Preguntas Rápidas */}
+            {/* Chips iniciales */}
             {messages.length <= 2 && !loading && (
               <div
                 style={{
@@ -405,12 +413,6 @@ export default function AIChatBox() {
                       cursor: 'pointer',
                       transition: 'background 0.2s',
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(245, 158, 11, 0.22)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
-                    }}
                   >
                     {prompt}
                   </button>
@@ -418,7 +420,7 @@ export default function AIChatBox() {
               </div>
             )}
 
-            {/* Input de consulta */}
+            {/* Formulario */}
             <form
               onSubmit={handleSubmit}
               style={{
@@ -466,7 +468,7 @@ export default function AIChatBox() {
           </div>
         )}
 
-        {/* Burbuja Flotante con halo de pulso e icono */}
+        {/* Botón Flotante */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {!isOpen && (
             <div
@@ -507,12 +509,6 @@ export default function AIChatBox() {
               position: 'relative',
               animation: !isOpen ? 'subtleHalo 3s infinite' : 'none',
               transition: 'transform 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.06)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
             }}
           >
             {isOpen ? (
