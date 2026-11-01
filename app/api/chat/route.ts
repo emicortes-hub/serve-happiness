@@ -17,18 +17,21 @@ export async function POST(req: Request) {
 
     const systemInstruction = `
 Eres el Asistente Táctico Oficial de "Pro Sales Training" (academia de ventas liderada por Marcelo Gutiérrez).
-Tu rol es responder como un mentor de ventas senior: directo, práctico, profesional y empático con el cerrador.
+Tu rol es responder como un mentor de ventas senior: directo, práctico y profesional.
 
-REGLAS OBLIGATORIAS:
-- RESPONDE SIEMPRE EN ESPAÑOL. Está estrictamente prohibido responder en inglés.
-- NO muestres razonamiento interno, procesos de pensamiento, metas ni metadatos ("Goal:", "Persona:", "Step 1:").
-- Ve directo al grano: 1 breve diagnóstico de la objeción, seguido de 2 o 3 opciones prácticas de qué decir exactamente entre comillas, y cierra con 1 tip clave.
-- Respuestas breves, directas y con saltos de línea claros.
+REGLAS CRÍTICAS:
+- Responde EXCLUSIVAMENTE en español.
+- NUNCA generes ni expongas notas de planificación, esquemas en inglés ("User input:", "Diagnosis:", "Persona:", "Constraints:"), ni razonamiento interno.
+- Tu salida debe ser directamente el mensaje final para el alumno.
+- Estructura exacta de tu respuesta:
+  1. Diagnóstico breve de la objeción en una sola frase.
+  2. Dos o tres opciones concretas de qué responder textualmente (entre comillas).
+  3. Un consejo táctico de cierre.
 - Si preguntan por las sesiones en vivo: son martes y jueves a las 18:00 (Hora CDMX).
 - Si reportan fallos técnicos o pagos en Whop: indícales usar el formulario de soporte de la izquierda.
     `.trim();
 
-    // Historial limpio
+    // Historial limpio excluyendo mensajes de error
     const contents = (history || [])
       .filter((msg: { role: string; content: string }) => !msg.content.startsWith('Aviso del sistema:'))
       .map((msg: { role: string; content: string }) => ({
@@ -47,12 +50,16 @@ REGLAS OBLIGATORIAS:
       },
       contents,
       generationConfig: {
-        temperature: 0.5,
-        maxOutputTokens: 600,
+        temperature: 0.4,
+        maxOutputTokens: 800,
+        // Desactiva el modo de razonamiento interno para que solo devuelva la respuesta limpia
+        thinkingConfig: {
+          thinkingBudget: 0,
+        },
       },
     };
 
-    // Consultamos los modelos disponibles para la key
+    // 1. Obtener los modelos disponibles
     const listRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
     );
@@ -66,7 +73,16 @@ REGLAS OBLIGATORIAS:
       .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
       .map((m: any) => m.name.replace(/^models\//, ''));
 
-    for (const model of availableModels) {
+    // Priorizar modelos estándar rápidos sobre los de razonamiento pesado
+    const sortedModels = availableModels.sort((a, b) => {
+      const isFlashA = a.includes('flash') && !a.includes('thinking');
+      const isFlashB = b.includes('flash') && !b.includes('thinking');
+      if (isFlashA && !isFlashB) return -1;
+      if (!isFlashA && isFlashB) return 1;
+      return 0;
+    });
+
+    for (const model of sortedModels) {
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
         const res = await fetch(url, {
@@ -78,17 +94,30 @@ REGLAS OBLIGATORIAS:
         const data = await res.json();
 
         if (res.ok && data.candidates?.[0]?.content?.parts) {
-          // Extraer únicamente la parte de texto final del modelo
           const parts = data.candidates[0].content.parts;
-          const textPart = parts.find((p: any) => p.text && !p.thought) || parts[parts.length - 1];
-          const replyText = textPart?.text?.trim();
+          
+          // Filtrar cualquier bloque que sea de razonamiento (thought) y tomar solo la respuesta real
+          const nonThoughtParts = parts.filter((p: any) => !p.thought && p.text);
+          const chosenPart = nonThoughtParts.length > 0 ? nonThoughtParts[nonThoughtParts.length - 1] : parts[parts.length - 1];
+          let cleanReply = chosenPart?.text?.trim() || "";
 
-          if (replyText) {
-            return NextResponse.json({ reply: replyText });
+          // Si el texto incluye residuos de análisis inicial antes de la respuesta, limpiarlos
+          if (cleanReply.includes('Diagnóstico:') || cleanReply.includes('Opción 1:')) {
+            const cutIndex = Math.min(
+              cleanReply.indexOf('Diagnóstico:') !== -1 ? cleanReply.indexOf('Diagnóstico:') : Infinity,
+              cleanReply.indexOf('Opción 1:') !== -1 ? cleanReply.indexOf('Opción 1:') : Infinity
+            );
+            if (cutIndex !== Infinity && cutIndex > 0) {
+              cleanReply = cleanReply.substring(cutIndex).trim();
+            }
+          }
+
+          if (cleanReply) {
+            return NextResponse.json({ reply: cleanReply });
           }
         }
       } catch {
-        // Intentar siguiente modelo si falla
+        // Continuar con el siguiente modelo disponible
       }
     }
 
