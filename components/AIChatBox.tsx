@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -11,7 +11,7 @@ export default function AIChatBox() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: '¡Hola! Soy tu tutor de IA en Pro Sales Training. ¿Tienes dudas con alguna objeción de ventas o sobre la dinámica de las mentorías?',
+      content: '¡Hola! Soy tu asistente de ventas IA. Si tienes dudas rápidas sobre objeciones comerciales o las dinámicas de las llamadas, pregúntame.',
     },
   ]);
   const [input, setInput] = useState('');
@@ -40,12 +40,12 @@ export default function AIChatBox() {
       const data = await res.json();
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: data.reply || 'No pude obtener una respuesta.' },
+        { role: 'assistant', content: data.reply || 'No pude procesar la consulta.' },
       ]);
-    } catch (err) {
+    } catch {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: 'Error de conexión. Intenta de nuevo o genera un ticket.' },
+        { role: 'assistant', content: 'Error de conexión. Intenta nuevamente o abre una solicitud de soporte.' },
       ]);
     } finally {
       setLoading(false);
@@ -53,55 +53,160 @@ export default function AIChatBox() {
   };
 
   return (
-    <div className="w-full bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col h-[450px]">
-      <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
-        <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+    <div
+      style={{
+        backgroundColor: '#0f192d',
+        border: '1px solid rgba(245, 158, 11, 0.35)',
+        borderRadius: '14px',
+        padding: '24px',
+        boxShadow: '0 16px 36px -12px rgba(0, 0, 0, 0.7), 0 0 20px -8px rgba(245, 158, 11, 0.15)',
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '420px',
+      }}
+    >
+      {/* Franja superior dorada/ámbar */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '3px',
+          borderTopLeftRadius: '14px',
+          borderTopRightRadius: '14px',
+          background: 'linear-gradient(135deg, #d97706 0%, #fbbf24 100%)',
+        }}
+      />
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+        <div
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '10px',
+            backgroundColor: 'rgba(245, 158, 11, 0.12)',
+            border: '1px solid rgba(245, 158, 11, 0.28)',
+            color: '#fbbf24',
+            display: 'grid',
+            placeItems: 'center',
+            fontSize: '16px',
+            flexShrink: 0,
+          }}
+        >
+          ⚡
+        </div>
         <div>
-          <h3 className="text-sm font-semibold text-white">Tutor de Ventas IA</h3>
-          <p className="text-xs text-slate-400">Respuestas inmediatas sobre método y objeciones</p>
+          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#ffffff' }}>
+            Asistente Táctico IA
+          </h3>
+          <p style={{ margin: 0, fontSize: '12px', color: '#fbbf24', opacity: 0.9 }}>
+            Respuestas automáticas sobre objeciones y método
+          </p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-2 scrollbar-thin">
+      {/* Lista de Mensajes */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          paddingRight: '6px',
+          marginBottom: '14px',
+        }}
+      >
         {messages.map((m, idx) => (
           <div
             key={idx}
-            className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            style={{
+              display: 'flex',
+              justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start',
+            }}
           >
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs leading-relaxed ${
-                m.role === 'user'
-                  ? 'bg-blue-600 text-white rounded-br-none'
-                  : 'bg-slate-800 text-slate-200 border border-slate-700/60 rounded-bl-none'
-              }`}
+              style={{
+                maxWidth: '85%',
+                fontSize: '12.5px',
+                lineHeight: '1.5',
+                padding: '10px 14px',
+                borderRadius: '12px',
+                ...(m.role === 'user'
+                  ? {
+                      backgroundColor: '#f59e0b',
+                      color: '#0f172a',
+                      fontWeight: 600,
+                      borderBottomRightRadius: '2px',
+                    }
+                  : {
+                      backgroundColor: '#13213c',
+                      color: '#e2e8f0',
+                      border: '1px solid #1e335a',
+                      borderBottomLeftRadius: '2px',
+                    }),
+              }}
             >
               {m.content}
             </div>
           </div>
         ))}
         {loading && (
-          <div className="flex justify-start">
-            <div className="bg-slate-800 border border-slate-700 text-slate-400 text-xs px-3 py-2 rounded-xl">
+          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+            <div
+              style={{
+                fontSize: '12px',
+                color: '#fbbf24',
+                backgroundColor: '#13213c',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                padding: '8px 12px',
+                borderRadius: '10px',
+              }}
+            >
               Pensando respuesta...
             </div>
           </div>
         )}
       </div>
 
-      <form onSubmit={sendMessage} className="pt-3 border-t border-slate-800 flex gap-2">
+      {/* Input y Botón de Envío */}
+      <form onSubmit={sendMessage} style={{ display: 'flex', gap: '8px', paddingTop: '10px', borderTop: '1px solid #1a2a47' }}>
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Escribe tu consulta o pide simular una objeción..."
-          className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+          placeholder="Escribe tu duda sobre ventas u objeciones..."
+          style={{
+            flex: 1,
+            backgroundColor: '#081120',
+            border: '1px solid #1a2a47',
+            borderRadius: '10px',
+            padding: '10px 14px',
+            fontSize: '12.5px',
+            color: '#ffffff',
+            outline: 'none',
+          }}
         />
         <button
           type="submit"
           disabled={loading || !input.trim()}
-          className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium text-xs px-4 py-2 rounded-xl transition-all"
+          style={{
+            backgroundColor: '#f59e0b',
+            color: '#0f172a',
+            border: 'none',
+            borderRadius: '10px',
+            padding: '0 16px',
+            fontSize: '12px',
+            fontWeight: 700,
+            cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
+            opacity: loading || !input.trim() ? 0.6 : 1,
+            transition: 'background 0.2s ease',
+          }}
         >
-          Enviar
+          Consultar
         </button>
       </form>
     </div>

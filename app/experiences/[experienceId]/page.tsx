@@ -399,10 +399,7 @@ export default function ProSalesTrainingExperience(props: PageProps) {
         >
           {/* COLUMNA FORMULARIO */}
           <section>
-            {/* Tutor de Ventas IA */}
-<div style={{ marginBottom: '24px' }}>
-  <AIChatBox />
-</div>
+         
             <div
               style={{
                 backgroundColor: '#0f192d',
@@ -891,6 +888,10 @@ export default function ProSalesTrainingExperience(props: PageProps) {
                 })}
               </div>
             </div>
+            {/* Asistente Táctico IA */}
+      <div style={{ marginTop: '24px' }}>
+        <AIChatBox />
+      </div>
           </aside>
         </div>
       </div>
