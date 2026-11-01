@@ -7,11 +7,26 @@ interface Message {
   content: string;
 }
 
+// Función auxiliar para renderizar negritas Markdown de forma segura
+function renderFormattedMessage(text: string) {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <strong key={index} style={{ color: '#fbbf24', fontWeight: 700 }}>
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return <span key={index}>{part}</span>;
+  });
+}
+
 export default function AIChatBox() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: '¡Hola! Soy tu asistente táctico de ventas. Pregúntame sobre cómo destrabar una objeción puntual o las dinámicas del método.',
+      content: '¡Hola! Soy tu asistente táctico de ventas. Si tienes dudas rápidas sobre objeciones comerciales o las dinámicas de las llamadas, pregúntame.',
     },
   ]);
   const [input, setInput] = useState('');
@@ -64,18 +79,18 @@ export default function AIChatBox() {
   return (
     <div
       style={{
-        backgroundColor: '#0f192d',
-        border: '1px solid rgba(245, 158, 11, 0.4)',
-        borderRadius: '14px',
-        padding: '20px',
-        boxShadow: '0 16px 36px -12px rgba(0, 0, 0, 0.7), 0 0 24px -10px rgba(245, 158, 11, 0.2)',
+        backgroundColor: '#0c1527',
+        border: '1px solid rgba(245, 158, 11, 0.35)',
+        borderRadius: '16px',
+        padding: '18px',
+        boxShadow: '0 16px 36px -12px rgba(0, 0, 0, 0.7), 0 0 24px -10px rgba(245, 158, 11, 0.15)',
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        height: '460px',
+        height: '480px',
       }}
     >
-      {/* Línea dorada superior */}
+      {/* Detalle visual dorado superior */}
       <div
         style={{
           position: 'absolute',
@@ -83,14 +98,23 @@ export default function AIChatBox() {
           left: 0,
           right: 0,
           height: '3px',
-          borderTopLeftRadius: '14px',
-          borderTopRightRadius: '14px',
+          borderTopLeftRadius: '16px',
+          borderTopRightRadius: '16px',
           background: 'linear-gradient(135deg, #d97706 0%, #fbbf24 100%)',
         }}
       />
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px', paddingBottom: '12px', borderBottom: '1px solid #1a2a47' }}>
+      {/* Encabezado */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: '12px',
+          paddingBottom: '12px',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+        }}
+      >
         <div
           style={{
             width: '34px',
@@ -117,14 +141,14 @@ export default function AIChatBox() {
         </div>
       </div>
 
-      {/* Historial de Mensajes */}
+      {/* Área scrollable de mensajes */}
       <div
         style={{
           flex: 1,
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px',
+          gap: '14px',
           paddingRight: '6px',
           marginBottom: '12px',
         }}
@@ -139,31 +163,33 @@ export default function AIChatBox() {
           >
             <div
               style={{
-                maxWidth: '90%',
+                maxWidth: '92%',
                 fontSize: '12.5px',
-                lineHeight: '1.6',
-                padding: '12px 14px',
+                lineHeight: '1.65',
+                padding: '12px 16px',
                 borderRadius: '12px',
-                whiteSpace: 'pre-wrap', // Mantiene los saltos de línea limpios
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
                 ...(m.role === 'user'
                   ? {
                       backgroundColor: '#f59e0b',
                       color: '#0b1120',
                       fontWeight: 600,
-                      borderBottomRightRadius: '2px',
+                      borderBottomRightRadius: '3px',
                     }
                   : {
                       backgroundColor: '#13213c',
                       color: '#e2e8f0',
                       border: '1px solid #1e335a',
-                      borderBottomLeftRadius: '2px',
+                      borderBottomLeftRadius: '3px',
                     }),
               }}
             >
-              {m.content}
+              {m.role === 'assistant' ? renderFormattedMessage(m.content) : m.content}
             </div>
           </div>
         ))}
+
         {loading && (
           <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
             <div
@@ -183,8 +209,16 @@ export default function AIChatBox() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Formulario de consulta */}
-      <form onSubmit={sendMessage} style={{ display: 'flex', gap: '8px', paddingTop: '10px', borderTop: '1px solid #1a2a47' }}>
+      {/* Input de consulta */}
+      <form
+        onSubmit={sendMessage}
+        style={{
+          display: 'flex',
+          gap: '8px',
+          paddingTop: '10px',
+          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+        }}
+      >
         <input
           type="text"
           value={input}
@@ -192,8 +226,8 @@ export default function AIChatBox() {
           placeholder="Escribe tu duda sobre ventas u objeciones..."
           style={{
             flex: 1,
-            backgroundColor: '#081120',
-            border: '1px solid #1a2a47',
+            backgroundColor: '#070e1c',
+            border: '1px solid #1b2840',
             borderRadius: '10px',
             padding: '10px 14px',
             fontSize: '12.5px',
@@ -214,7 +248,7 @@ export default function AIChatBox() {
             fontWeight: 700,
             cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
             opacity: loading || !input.trim() ? 0.6 : 1,
-            transition: 'background 0.2s ease',
+            transition: 'opacity 0.2s ease',
           }}
         >
           Consultar
