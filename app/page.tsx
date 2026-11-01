@@ -9,134 +9,167 @@ export default function ServeLandingPage() {
     <main
       style={{
         minHeight: '100vh',
-        backgroundColor: '#05070d',
+        backgroundColor: '#0a0a0c',
         color: '#f8fafc',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '32px 24px',
+        padding: '40px 24px',
         position: 'relative',
         overflow: 'hidden',
         fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* Grid de fondo tipo software developer */}
+      {/* Resplandor ambiental oro cálido */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '-20%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '900px',
+          height: '600px',
+          background:
+            'radial-gradient(circle, rgba(212, 175, 55, 0.12) 0%, rgba(180, 130, 40, 0.05) 45%, rgba(10, 10, 12, 0) 75%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* Trama de líneas doradas sutiles en los costados */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
           backgroundImage:
-            'radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0)',
-          backgroundSize: '32px 32px',
-          opacity: 0.6,
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* Aura de iluminación Esmeralda / Índigo */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '-25%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '800px',
-          height: '550px',
-          background:
-            'radial-gradient(circle, rgba(16, 185, 129, 0.14) 0%, rgba(99, 102, 241, 0.12) 40%, rgba(5, 7, 13, 0) 75%)',
+            'radial-gradient(circle at 1px 1px, rgba(212, 175, 55, 0.08) 1px, transparent 0)',
+          backgroundSize: '40px 40px',
+          opacity: 0.5,
           pointerEvents: 'none',
         }}
       />
 
       <div
         style={{
-          maxWidth: '760px',
+          maxWidth: '860px',
           textAlign: 'center',
           position: 'relative',
           zIndex: 1,
         }}
       >
-        {/* Badge distintivo de SERVE */}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+        {/* Badge superior táctico */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', marginBottom: '32px' }}>
           <span
             style={{
-              fontSize: '11.5px',
-              fontWeight: 700,
-              letterSpacing: '0.12em',
+              fontSize: '11px',
+              fontWeight: 800,
               textTransform: 'uppercase',
-              color: '#34d399',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
-              border: '1px solid rgba(52, 211, 153, 0.3)',
-              padding: '6px 16px',
+              letterSpacing: '0.22em',
+              color: '#d4af37',
+              backgroundColor: 'rgba(212, 175, 55, 0.08)',
+              border: '1px solid rgba(212, 175, 55, 0.28)',
+              padding: '7px 20px',
               borderRadius: '99px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
+              boxShadow: '0 0 20px rgba(212, 175, 55, 0.12)',
             }}
           >
-            <span
-              style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                backgroundColor: '#10b981',
-                boxShadow: '0 0 8px #10b981',
-              }}
-            />
-            Customer Operations Platform
+            SISTEMA DE SOPORTE INTELIGENTE
           </span>
         </div>
 
-        {/* Título de SERVE */}
-        <div style={{ margin: '0 0 20px' }}>
+        {/* Emblema Monograma $ & Tipografía SERVE */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '18px',
+            marginBottom: '16px',
+            flexWrap: 'wrap',
+          }}
+        >
+          {/* Monograma estilizado flecha / dólar */}
+          <div
+            style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, #1c1813 0%, #0d0c0a 100%)',
+              border: '1.5px solid rgba(212, 175, 55, 0.4)',
+              boxShadow: '0 8px 30px rgba(212, 175, 55, 0.22)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '32px',
+              fontWeight: 900,
+              color: '#e5c05b',
+            }}
+          >
+            $
+          </div>
+
           <h1
             style={{
-              fontSize: 'clamp(44px, 8vw, 76px)',
+              fontSize: 'clamp(54px, 10vw, 92px)',
               fontWeight: 950,
-              lineHeight: 0.95,
+              lineHeight: 0.9,
               margin: 0,
-              letterSpacing: '-0.04em',
-              background: 'linear-gradient(135deg, #ffffff 40%, #94a3b8 100%)',
+              letterSpacing: '0.04em',
+              background: 'linear-gradient(180deg, #ffffff 15%, #e6ca65 65%, #9a7828 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
+              textShadow: '0 10px 40px rgba(212, 175, 55, 0.18)',
             }}
           >
             SERVE
           </h1>
-
-          <p
-            style={{
-              fontSize: '14px',
-              fontWeight: 600,
-              letterSpacing: '0.24em',
-              textTransform: 'uppercase',
-              color: '#10b981',
-              margin: '14px 0 0',
-            }}
-          >
-            Intelligent Support & Experience Ops
-          </p>
         </div>
 
-        {/* Propuesta de valor */}
+        {/* Acrónimo Oficial de la Marca */}
         <p
           style={{
-            color: '#94a3b8',
-            fontSize: '16.5px',
-            lineHeight: 1.65,
-            margin: '0 auto 36px',
-            maxWidth: '580px',
+            fontSize: 'clamp(11px, 2vw, 14px)',
+            fontWeight: 800,
+            letterSpacing: '0.24em',
+            textTransform: 'uppercase',
+            color: '#c29b38',
+            margin: '0 0 24px',
           }}
         >
-          Infraestructura de soporte automatizado, gestión de incidentes y agentes tácticos de IA embebidos para comunidades de alto rendimiento en Whop.
+          SISTEMA · ESTRATEGIA · RESULTADOS · VALOR · ÉLITE
         </p>
 
-        {/* Botones conectados a tu Whop */}
+        {/* Subtítulo Tecnológico */}
+        <h2
+          style={{
+            fontSize: 'clamp(18px, 3vw, 24px)',
+            fontWeight: 700,
+            color: '#f1f5f9',
+            margin: '0 auto 16px',
+            letterSpacing: '-0.01em',
+          }}
+        >
+          Integración con Telegram & IA
+        </h2>
+
+        {/* Descripción de propuesta */}
+        <p
+          style={{
+            color: '#8e8e99',
+            fontSize: '16px',
+            lineHeight: 1.65,
+            margin: '0 auto 40px',
+            maxWidth: '620px',
+          }}
+        >
+          Infraestructura de respuesta táctica, derivación inteligente y automatización operativa diseñada para comunidades y academias de alta exigencia.
+        </p>
+
+        {/* Botones estilo Oro Satinado / Dark Glass */}
         <div
           style={{
             display: 'flex',
-            gap: '14px',
+            gap: '16px',
             justifyContent: 'center',
             alignItems: 'center',
             flexWrap: 'wrap',
@@ -147,29 +180,30 @@ export default function ServeLandingPage() {
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              background: '#ffffff',
-              color: '#05070d',
-              fontWeight: 800,
-              fontSize: '14px',
-              padding: '13px 26px',
-              borderRadius: '10px',
+              background: 'linear-gradient(135deg, #e5c05b 0%, #b8860b 100%)',
+              color: '#0a0a0c',
+              fontWeight: 900,
+              fontSize: '14.5px',
+              letterSpacing: '0.03em',
+              padding: '14px 30px',
+              borderRadius: '12px',
               textDecoration: 'none',
-              boxShadow: '0 4px 20px rgba(255, 255, 255, 0.15)',
+              boxShadow: '0 10px 30px rgba(212, 175, 55, 0.35)',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
-              transition: 'transform 0.2s, background 0.2s',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.background = '#f1f5f9';
+              e.currentTarget.style.boxShadow = '0 14px 40px rgba(212, 175, 55, 0.5)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.background = '#ffffff';
+              e.currentTarget.style.boxShadow = '0 10px 30px rgba(212, 175, 55, 0.35)';
             }}
           >
-            Explorar en Whop App Store ↗
+            Acceder a SERVE en Whop ↗
           </a>
 
           <a
@@ -177,29 +211,29 @@ export default function ServeLandingPage() {
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              color: '#cbd5e1',
-              fontWeight: 600,
-              fontSize: '14px',
-              padding: '13px 24px',
-              borderRadius: '10px',
+              backgroundColor: 'rgba(212, 175, 55, 0.05)',
+              color: '#e5c05b',
+              fontWeight: 700,
+              fontSize: '14.5px',
+              padding: '14px 28px',
+              borderRadius: '12px',
               textDecoration: 'none',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              transition: 'all 0.2s',
+              border: '1px solid rgba(212, 175, 55, 0.3)',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
+              transition: 'all 0.2s ease',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
-              e.currentTarget.style.color = '#ffffff';
+              e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.6)';
+              e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.12)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-              e.currentTarget.style.color = '#cbd5e1';
+              e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.3)';
+              e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.05)';
             }}
           >
-            Contacto en Whop ↗
+            Contacto & Membresía ↗
           </a>
         </div>
       </div>
