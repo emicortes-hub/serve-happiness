@@ -15,11 +15,65 @@ export async function POST(req: Request) {
       });
     }
 
+    // 1. Obtener día y hora actual fijados en Ciudad de México (CDMX)
+    const now = new Date();
+    const cdmxDayName = new Intl.DateTimeFormat('es-MX', {
+      timeZone: 'America/Mexico_City',
+      weekday: 'long',
+    }).format(now);
+
+    // 0 = Dom, 1 = Lun, 2 = Mar, 3 = Mié, 4 = Jue, 5 = Vie, 6 = Sáb
+    const dayOfWeekParts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Mexico_City',
+      weekday: 'short',
+    }).format(now);
+
+    const dayMap: { [key: string]: number } = {
+      Sun: 0,
+      Mon: 1,
+      Tue: 2,
+      Wed: 3,
+      Thu: 4,
+      Fri: 5,
+      Sat: 6,
+    };
+    const currentDay = dayMap[dayOfWeekParts] ?? now.getDay();
+
+    // 2. Determinar contextualmente cuál es la sesión de hoy o la próxima
+    let scheduleNotice = '';
+    if (currentDay === 2) {
+      scheduleNotice = 'HOY es MARTES: A las 8:00 AM (CDMX) es la sesión en vivo "PRO SCRIPT LAB" con Marcelo Gutiérrez.';
+    } else if (currentDay === 3) {
+      scheduleNotice = 'HOY es MIÉRCOLES: A las 7:00 PM (CDMX) es la sesión en vivo "PRO HOT SEAT" con Marcelo Gutiérrez.';
+    } else if (currentDay === 4) {
+      scheduleNotice = 'HOY es JUEVES: A las 8:00 AM (CDMX) es la sesión en vivo "PRO ROLE PLAY" con Marcelo Gutiérrez.';
+    } else if (currentDay === 1) {
+      scheduleNotice = 'MAÑANA es MARTES: A las 8:00 AM (CDMX) es la próxima sesión en vivo ("PRO SCRIPT LAB").';
+    } else {
+      // Viernes (5), Sábado (6) o Domingo (0)
+      scheduleNotice = `Hoy es ${cdmxDayName}. NO hay sesión programada para hoy ni para mañana. La PRÓXIMA sesión en vivo es el MARTES a las 8:00 AM (CDMX): "PRO SCRIPT LAB".`;
+    }
+
     const systemInstruction = `
 Eres el Asistente Táctico Oficial de "Pro Sales Training" (academia de ventas liderada por Marcelo Gutiérrez).
 Tu rol es responder como un mentor de ventas senior: directo, práctico y profesional.
 
-REGLAS CRÍTICAS:
+CONTEXTO TEMPORAL ACTUAL:
+- Día oficial actual: ${cdmxDayName.toUpperCase()} (Hora CDMX).
+- Estado de la agenda de sesiones: ${scheduleNotice}
+
+CALENDARIO OFICIAL DE SESIONES EN VIVO (Con Marcelo Gutiérrez vía Zoom):
+- Martes: "PRO SCRIPT LAB" a las 8:00 AM (CDMX).
+- Miércoles: "PRO HOT SEAT" a las 7:00 PM (CDMX).
+- Jueves: "PRO ROLE PLAY" a las 8:00 AM (CDMX).
+(Viernes, Sábado, Domingo y Lunes NO hay sesiones).
+
+REGLAS CRÍTICAS DE TIEMPO:
+- NUNCA digas que "mañana jueves" hay sesión a menos que el contexto temporal confirme que hoy es miércoles.
+- Si hoy es viernes, sábado, domingo o lunes, la siguiente sesión es indefectiblemente el próximo MARTES a las 8:00 AM.
+- Si vas a mencionar una sesión o un recordatorio al final, básate estrictamente en el "Estado de la agenda de sesiones" proporcionado arriba.
+
+REGLAS DE FORMATO Y ESTILO:
 - Responde EXCLUSIVAMENTE en español.
 - NUNCA generes ni expongas notas de planificación ni esquemas en inglés ("User input:", "Diagnosis:", "Persona:", etc.).
 - Tu salida debe ser directamente el mensaje final para el alumno.
@@ -27,13 +81,6 @@ REGLAS CRÍTICAS:
   1. Diagnóstico breve de la objeción en una sola frase.
   2. Dos o tres opciones concretas de qué responder textualmente (entre comillas).
   3. Un consejo táctico de cierre.
-
-CALENDARIO OFICIAL DE SESIONES EN VIVO (Con Marcelo Gutiérrez):
-Todas las sesiones son vía Zoom (Online):
-- Martes: "PRO SCRIPT LAB" a las 8:00 AM.
-- Miércoles: "PRO HOT SEAT" a las 7:00 PM.
-- Jueves: "PRO ROLE PLAY" a las 8:00 AM.
-(Si preguntan por el enlace de acceso, recuérdales que los links de Zoom están disponibles en el calendario de la comunidad de Whop / canal de anuncios).
 
 SOPORTE Y ACCESOS:
 - Para fallos técnicos, facturación o problemas de acceso en Whop, indícales utilizar el formulario contiguo para contactar a soporte humano.
@@ -58,7 +105,7 @@ SOPORTE Y ACCESOS:
       },
       contents,
       generationConfig: {
-        temperature: 0.4,
+        temperature: 0.3,
         maxOutputTokens: 800,
         thinkingConfig: {
           thinkingBudget: 0,
