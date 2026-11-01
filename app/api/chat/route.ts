@@ -25,19 +25,19 @@ Reglas:
 - Si reportan fallos técnicos o problemas con pagos en Whop, oriéntalos a abrir la solicitud en el formulario contiguo.
     `.trim();
 
-    // Historial limpio
+    // Historial de conversación formateado para Gemini
     const contents = (history || []).map((msg: { role: string; content: string }) => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: msg.content }],
     }));
 
-    // Mensaje actual
+    // Mensaje actual del usuario
     contents.push({
       role: 'user',
       parts: [{ text: message }],
     });
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey.trim()}`;
 
     const geminiRes = await fetch(url, {
       method: 'POST',
