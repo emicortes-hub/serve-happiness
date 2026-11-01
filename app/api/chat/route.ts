@@ -37,8 +37,9 @@ Reglas:
       parts: [{ text: message }],
     });
 
-    // Endpoint oficial con gemini-2.0-flash-latest
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`;
+
+    const geminiRes = await fetch(url, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json'
@@ -58,7 +59,6 @@ Reglas:
     const data = await geminiRes.json();
 
     if (!geminiRes.ok) {
-      // Imprime el detalle exacto en los logs de Vercel
       console.error('Error detallado de Gemini API:', JSON.stringify(data));
       const errorMsg = data?.error?.message || "Error al conectar con Gemini API";
       return NextResponse.json({
