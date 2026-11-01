@@ -37,10 +37,8 @@ Reglas:
       parts: [{ text: message }],
     });
 
-    // Endpoint oficial con gemini-1.5-flash-latest
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey.trim()}`;
-
-    const geminiRes = await fetch(url, {
+    // Endpoint oficial con gemini-2.0-flash-latest
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`;
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json'
