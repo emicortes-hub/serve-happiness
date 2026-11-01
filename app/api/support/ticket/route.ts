@@ -35,11 +35,12 @@ ${header}
 <i>"${message}"</i>
     `.trim();
 
+    // Solo botones con protocolo HTTPS válido para Telegram
     const inlineKeyboard: any[] = [];
+    const actionRow = [];
 
-    const contactRow = [];
     if (cleanPhone) {
-      contactRow.push({
+      actionRow.push({
         text: '💬 Abrir WhatsApp',
         url: `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
           `Hola ${name}, te contacto del equipo de Pro Sales Training respecto a tu consulta (${caseId}).`
@@ -47,25 +48,12 @@ ${header}
       });
     }
 
-    if (email) {
-      contactRow.push({
-        text: '✉️ Enviar Correo',
-        url: `mailto:${email}?subject=${encodeURIComponent(
-          `Soporte Pro Sales Training — Caso ${caseId}`
-        )}`,
-      });
-    }
+    actionRow.push({
+      text: '🎥 Sala Zoom',
+      url: 'https://us02web.zoom.us/j/9272409073?pwd=feP7nGIvZidKJBcqb6v3roewaQrQX1.1',
+    });
 
-    if (contactRow.length > 0) {
-      inlineKeyboard.push(contactRow);
-    }
-
-    inlineKeyboard.push([
-      {
-        text: '🎥 Entrar a Sala Zoom',
-        url: 'https://us02web.zoom.us/j/9272409073?pwd=feP7nGIvZidKJBcqb6v3roewaQrQX1.1',
-      },
-    ]);
+    inlineKeyboard.push(actionRow);
 
     const telegramRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
