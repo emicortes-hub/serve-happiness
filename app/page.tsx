@@ -3,6 +3,9 @@
 import React from 'react';
 import AIChatBox from '@/components/AIChatBox';
 
+// Coloca aquí la URL exacta de tu página de Whop de SERVE
+const SERVE_WHOP_URL = 'https://whop.com'; 
+
 export default function ServeLandingPage() {
   return (
     <main
@@ -33,7 +36,7 @@ export default function ServeLandingPage() {
         }}
       />
 
-      {/* Aura de iluminación en gradiente Esmeralda / Índigo */}
+      {/* Aura de iluminación Esmeralda / Índigo */}
       <div
         style={{
           position: 'absolute',
@@ -87,7 +90,7 @@ export default function ServeLandingPage() {
           </span>
         </div>
 
-        {/* Logotipo y Título de SERVE */}
+        {/* Título de SERVE */}
         <div style={{ margin: '0 0 20px' }}>
           <h1
             style={{
@@ -118,7 +121,7 @@ export default function ServeLandingPage() {
           </p>
         </div>
 
-        {/* Copy de propuesta de valor de software */}
+        {/* Propuesta de valor */}
         <p
           style={{
             color: '#94a3b8',
@@ -131,7 +134,7 @@ export default function ServeLandingPage() {
           Infraestructura de soporte automatizado, gestión de incidentes y agentes tácticos de IA embebidos para comunidades de alto rendimiento en Whop.
         </p>
 
-        {/* Botones de acción propios de SERVE */}
+        {/* Ambos botones dirigiendo al Whop de SERVE */}
         <div
           style={{
             display: 'flex',
@@ -141,8 +144,9 @@ export default function ServeLandingPage() {
             flexWrap: 'wrap',
           }}
         >
+          {/* Botón Principal */}
           <a
-            href="https://whop.com"
+            href={SERVE_WHOP_URL}
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -171,8 +175,11 @@ export default function ServeLandingPage() {
             Explorar en Whop App Store ↗
           </a>
 
+          {/* Botón Secundario */}
           <a
-            href="mailto:soporte@serve.com"
+            href={SERVE_WHOP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               backgroundColor: 'rgba(255, 255, 255, 0.05)',
               color: '#cbd5e1',
@@ -183,6 +190,9 @@ export default function ServeLandingPage() {
               textDecoration: 'none',
               border: '1px solid rgba(255, 255, 255, 0.1)',
               transition: 'all 0.2s',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
@@ -193,12 +203,11 @@ export default function ServeLandingPage() {
               e.currentTarget.style.color = '#cbd5e1';
             }}
           >
-            Contacto de Integración
+            Contacto en Whop ↗
           </a>
         </div>
       </div>
 
-      {/* Asistente táctico IA en la esquina */}
       <AIChatBox />
     </main>
   );
