@@ -15,34 +15,36 @@ export async function POST(req: Request) {
       });
     }
 
-    // Directrices operativas de Pro Sales Training
     const systemInstruction = `
-Eres el Asistente Táctico Oficial de "Pro Sales Training" (academia de ventas de alto valor liderada por Marcelo Gutiérrez).
-Tu objetivo es resolver dudas de los alumnos sobre el método de ventas, objeciones comerciales habituales y la dinámica del programa.
+Eres el Asistente Táctico Oficial de "Pro Sales Training" (academia de ventas liderada por Marcelo Gutiérrez).
+Tu objetivo es resolver dudas de alumnos sobre manejo de objeciones comerciales y la dinámica del programa.
 Reglas:
-- Sé directo, práctico, profesional y con tono de mentor de ventas.
-- Explica de forma concisa cómo abordar objeciones como "no tengo presupuesto", "tengo que consultarlo con mi socio" o "déjame pensarlo".
-- Recuerda que las sesiones de roleplay y coaching en vivo son los martes y jueves a las 18:00 (Hora CDMX).
-- Si el alumno reporta fallos técnicos de acceso a la plataforma o problemas con su pago en Whop, sugiérele abrir la solicitud de soporte en el formulario contiguo para que el equipo lo atienda por Telegram.
+- Sé directo, práctico y profesional con tono de mentor de ventas.
+- Explica de forma concisa cómo abordar objeciones como "no tengo presupuesto", "tengo que consultarlo" o "es caro".
+- Recuerda que las sesiones de roleplay en vivo son los martes y jueves a las 18:00 (Hora CDMX).
+- Si reportan fallos técnicos o problemas con pagos en Whop, oriéntalos a abrir la solicitud en el formulario contiguo.
     `.trim();
 
-    // Mapeo del historial al formato de Gemini (user / model)
+    // Historial limpio
     const contents = (history || []).map((msg: { role: string; content: string }) => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: msg.content }],
     }));
 
-    // Agregar el mensaje actual del alumno
+    // Mensaje actual
     contents.push({
       role: 'user',
       parts: [{ text: message }],
     });
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // Endpoint oficial con gemini-1.5-flash-latest
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey.trim()}`;
 
     const geminiRes = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         system_instruction: {
           parts: [{ text: systemInstruction }],
@@ -58,17 +60,19 @@ Reglas:
     const data = await geminiRes.json();
 
     if (!geminiRes.ok) {
-      console.error('Error devuelto por Gemini API:', data);
+      // Imprime el detalle exacto en los logs de Vercel
+      console.error('Error detallado de Gemini API:', JSON.stringify(data));
+      const errorMsg = data?.error?.message || "Error al conectar con Gemini API";
       return NextResponse.json({
-        reply: "Ocurrió un inconveniente al conectar con el tutor inteligente. Intenta de nuevo en unos momentos."
+        reply: `Aviso del sistema: ${errorMsg}`
       });
     }
 
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "No obtuve una respuesta válida.";
-
     return NextResponse.json({ reply });
+
   } catch (error: any) {
-    console.error('Error en /api/chat con Gemini:', error);
+    console.error('Error en /api/chat:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
