@@ -34,7 +34,7 @@ export default function AIChatBox() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: '¡Hola! Soy tu asistente táctico de ventas. Si tienes dudas rápidas sobre objeciones comerciales o las dinámicas de las llamadas, pregúntame.',
+      content: '¡Hola! Soy tu mentor táctico de ventas IA. Si tienes dudas rápidas sobre objeciones comerciales o las dinámicas de las llamadas, pregúntame.',
     },
   ]);
   const [input, setInput] = useState('');
@@ -113,10 +113,9 @@ export default function AIChatBox() {
             flexDirection: 'column',
             overflow: 'hidden',
             marginBottom: '14px',
-            animation: 'fadeInUp 0.25s ease-out',
           }}
         >
-          {/* Barra dorada superior */}
+          {/* Acento dorado superior */}
           <div
             style={{
               height: '3px',
@@ -124,7 +123,7 @@ export default function AIChatBox() {
             }}
           />
 
-          {/* Header del Chat */}
+          {/* Header con icono de chat y punto verde al lado de Online */}
           <div
             style={{
               padding: '12px 16px',
@@ -135,33 +134,50 @@ export default function AIChatBox() {
               justifyContent: 'space-between',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {/* Contenedor del icono de chat bot */}
               <div
                 style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                  border: '1px solid rgba(245, 158, 11, 0.35)',
                   color: '#fbbf24',
                   display: 'grid',
                   placeItems: 'center',
-                  fontSize: '14px',
+                  flexShrink: 0,
                 }}
               >
-                ⚡
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                </svg>
               </div>
+
               <div>
-                <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#ffffff' }}>
+                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#ffffff' }}>
                   Asistente Táctico IA
                 </h4>
-                <p style={{ margin: 0, fontSize: '11px', color: '#fbbf24', opacity: 0.9 }}>
-                  Online • Mentor de Ventas
-                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                  {/* Punto verde de actividad */}
+                  <span
+                    style={{
+                      width: '7px',
+                      height: '7px',
+                      borderRadius: '50%',
+                      backgroundColor: '#22c55e',
+                      boxShadow: '0 0 8px #22c55e',
+                      display: 'inline-block',
+                    }}
+                  />
+                  <p style={{ margin: 0, fontSize: '11.5px', color: '#fbbf24', fontWeight: 600 }}>
+                    Online <span style={{ color: '#94a3b8', fontWeight: 400 }}>• Mentor de Ventas</span>
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Botón de minimizar */}
+            {/* Botón de cerrar */}
             <button
               onClick={() => setIsOpen(false)}
               aria-label="Cerrar chat"
@@ -240,7 +256,7 @@ export default function AIChatBox() {
                     borderRadius: '8px',
                   }}
                 >
-                  Consultando táctica...
+                  Preparando respuesta táctica...
                 </div>
               </div>
             )}
@@ -295,33 +311,83 @@ export default function AIChatBox() {
         </div>
       )}
 
-      {/* Botón Flotante / Burbuja */}
-      <button
-        onClick={() => setIsOpen((prev) => !prev)}
-        aria-label="Abrir asistente de ventas"
-        style={{
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
-          backgroundColor: '#0f192d',
-          border: '2px solid #f59e0b',
-          color: '#fbbf24',
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(245, 158, 11, 0.4)',
-          cursor: 'pointer',
-          display: 'grid',
-          placeItems: 'center',
-          fontSize: '22px',
-          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.08)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1)';
-        }}
-      >
-        {isOpen ? '✕' : '⚡'}
-      </button>
+      {/* Botón Flotante con Tooltip */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {!isOpen && (
+          <div
+            onClick={() => setIsOpen(true)}
+            style={{
+              backgroundColor: '#0c1527',
+              border: '1px solid rgba(245, 158, 11, 0.4)',
+              color: '#ffffff',
+              padding: '8px 14px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: 600,
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.5)',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <span style={{ color: '#fbbf24' }}>¿Dudas con una venta?</span> Chatea aquí
+          </div>
+        )}
+
+        <button
+          onClick={() => setIsOpen((prev) => !prev)}
+          aria-label={isOpen ? "Cerrar chat" : "Abrir chat de soporte táctico"}
+          style={{
+            width: '58px',
+            height: '58px',
+            borderRadius: '50%',
+            backgroundColor: '#0f192d',
+            border: '2px solid #f59e0b',
+            color: '#fbbf24',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6), 0 0 18px rgba(245, 158, 11, 0.35)',
+            cursor: 'pointer',
+            display: 'grid',
+            placeItems: 'center',
+            position: 'relative',
+            transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.06)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+        >
+          {isOpen ? (
+            <span style={{ fontSize: '20px', color: '#94a3b8' }}>✕</span>
+          ) : (
+            <>
+              {/* Icono de burbuja de chat conversacional */}
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/>
+                <circle cx="8" cy="10" r="1.5" />
+                <circle cx="12" cy="10" r="1.5" />
+                <circle cx="16" cy="10" r="1.5" />
+              </svg>
+              {/* Punto verde de actividad online */}
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '2px',
+                  right: '2px',
+                  width: '13px',
+                  height: '13px',
+                  borderRadius: '50%',
+                  backgroundColor: '#22c55e',
+                  border: '2.5px solid #0f192d',
+                }}
+              />
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 }
