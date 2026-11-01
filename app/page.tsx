@@ -77,40 +77,75 @@ export default function ServeLandingPage() {
           </span>
         </div>
 
-        {/* Emblema Monograma $ & Tipografía SERVE */}
+        {/* Emblema Oficial Daga/Flecha $ & Tipografía SERVE */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '18px',
+            gap: '24px',
             marginBottom: '16px',
             flexWrap: 'wrap',
           }}
         >
-          {/* Monograma estilizado flecha / dólar */}
-          <div
+          {/* Isotipo: Daga / Dólar Táctico Dorado en SVG con biselado 3D */}
+          <svg
+            width="82"
+            height="112"
+            viewBox="0 0 100 136"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
             style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, #1c1813 0%, #0d0c0a 100%)',
-              border: '1.5px solid rgba(212, 175, 55, 0.4)',
-              boxShadow: '0 8px 30px rgba(212, 175, 55, 0.22)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '32px',
-              fontWeight: 900,
-              color: '#e5c05b',
+              filter: 'drop-shadow(0 12px 28px rgba(212, 175, 55, 0.4))',
             }}
           >
-            $
-          </div>
+            <defs>
+              <linearGradient id="goldLight" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#ffea9f" />
+                <stop offset="45%" stopColor="#d4af37" />
+                <stop offset="100%" stopColor="#9a7828" />
+              </linearGradient>
+              <linearGradient id="goldMedium" x1="100%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#e5c05b" />
+                <stop offset="50%" stopColor="#b38728" />
+                <stop offset="100%" stopColor="#684b12" />
+              </linearGradient>
+              <linearGradient id="goldDark" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#7a5c18" />
+                <stop offset="100%" stopColor="#2a1d04" />
+              </linearGradient>
+            </defs>
 
+            {/* Punta de la flecha / daga superior (bisel izquierdo y derecho) */}
+            <path d="M50 2 L32 40 L44 37 L44 50 L50 50 Z" fill="url(#goldLight)" />
+            <path d="M50 2 L68 40 L56 37 L56 50 L50 50 Z" fill="url(#goldMedium)" />
+
+            {/* Cuerpo del monograma táctico S biselado */}
+            {/* Tramo superior S */}
+            <path d="M68 38 L92 38 L92 58 L46 58 L46 48 L68 48 Z" fill="url(#goldLight)" />
+            <path d="M92 48 L92 58 L38 58 L38 48 Z" fill="url(#goldDark)" />
+
+            {/* Tramo central vertical y cruzado */}
+            <path d="M38 58 L54 58 L54 78 L38 78 Z" fill="url(#goldMedium)" />
+            <path d="M38 78 L86 78 L86 98 L30 98 L30 88 L72 88 L72 82 L38 82 Z" fill="url(#goldLight)" />
+            <path d="M86 88 L86 98 L24 98 L24 88 Z" fill="url(#goldDark)" />
+
+            {/* Tramo inferior vertical */}
+            <path d="M72 78 L86 78 L86 98 L72 98 Z" fill="url(#goldMedium)" />
+
+            {/* Eje central vertical que atraviesa como espada */}
+            <path d="M44 50 L50 50 L50 86 L44 86 Z" fill="url(#goldLight)" />
+            <path d="M50 50 L56 50 L56 86 L50 86 Z" fill="url(#goldMedium)" />
+
+            {/* Punta inferior de la daga (bisel izquierdo y derecho) */}
+            <path d="M44 98 L50 98 L50 134 L32 98 Z" fill="url(#goldLight)" />
+            <path d="M50 98 L56 98 L68 98 L50 134 Z" fill="url(#goldMedium)" />
+          </svg>
+
+          {/* Nombre de marca SERVE */}
           <h1
             style={{
-              fontSize: 'clamp(54px, 10vw, 92px)',
+              fontSize: 'clamp(54px, 10vw, 96px)',
               fontWeight: 950,
               lineHeight: 0.9,
               margin: 0,
@@ -118,7 +153,7 @@ export default function ServeLandingPage() {
               background: 'linear-gradient(180deg, #ffffff 15%, #e6ca65 65%, #9a7828 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              textShadow: '0 10px 40px rgba(212, 175, 55, 0.18)',
+              textShadow: '0 10px 40px rgba(212, 175, 55, 0.25)',
             }}
           >
             SERVE
