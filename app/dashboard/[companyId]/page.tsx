@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, use } from 'react';
-
+import AIChatBox from '@/components/AIChatBox';
 interface PageProps {
   params: Promise<{ companyId?: string; experienceId?: string }>;
 }
@@ -399,6 +399,10 @@ export default function ProSalesTrainingExperience(props: PageProps) {
         >
           {/* COLUMNA FORMULARIO */}
           <section>
+            {/* Tutor de Ventas IA */}
+<div style={{ marginBottom: '24px' }}>
+  <AIChatBox />
+</div>
             <div
               style={{
                 backgroundColor: '#0f192d',
