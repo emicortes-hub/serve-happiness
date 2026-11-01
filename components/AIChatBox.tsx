@@ -13,8 +13,12 @@ const QUICK_PROMPTS = [
   '📅 "¿Cuándo son las sesiones de roleplay?"',
 ];
 
+// Limpieza de encabezados Markdown (###) y formateo de negritas/cursivas
 function renderFormattedMessage(text: string) {
-  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+  // Elimina prefijos '### ' para que no salgan hashtags crudos
+  const cleanedText = text.replace(/^###\s+/gm, '');
+
+  const parts = cleanedText.split(/(\*\*.*?\*\*|\*.*?\*)/g);
   return parts.map((part, index) => {
     if (part.startsWith('**') && part.endsWith('**')) {
       return (
@@ -92,7 +96,6 @@ export default function AIChatBox() {
     }
   };
 
-  // Escuchar eventos globales desde los chips de la página principal
   useEffect(() => {
     const handleGlobalTrigger = (e: any) => {
       const prompt = e.detail?.prompt;
@@ -150,9 +153,6 @@ export default function AIChatBox() {
         .ai-chat-scroll::-webkit-scrollbar-thumb {
           background: rgba(245, 158, 11, 0.25);
           border-radius: 10px;
-        }
-        .ai-chat-scroll::-webkit-scrollbar-thumb:hover {
-          background: rgba(245, 158, 11, 0.5);
         }
       `}</style>
 
@@ -269,7 +269,7 @@ export default function AIChatBox() {
               </button>
             </div>
 
-            {/* Historial */}
+            {/* Mensajes */}
             <div
               className="ai-chat-scroll"
               style={{
@@ -420,7 +420,7 @@ export default function AIChatBox() {
               </div>
             )}
 
-            {/* Formulario */}
+            {/* Formulario con botón Enviar en Dorado Ámbar */}
             <form
               onSubmit={handleSubmit}
               style={{
@@ -451,15 +451,16 @@ export default function AIChatBox() {
                 type="submit"
                 disabled={loading || !input.trim()}
                 style={{
-                  backgroundColor: '#f59e0b',
-                  color: '#0b1120',
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  color: '#070d17',
                   border: 'none',
                   borderRadius: '8px',
                   padding: '0 14px',
                   fontSize: '12px',
-                  fontWeight: 700,
+                  fontWeight: 800,
                   cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
                   opacity: loading || !input.trim() ? 0.6 : 1,
+                  boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)',
                 }}
               >
                 Enviar
@@ -468,7 +469,7 @@ export default function AIChatBox() {
           </div>
         )}
 
-        {/* Botón Flotante */}
+        {/* Burbuja Flotante */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {!isOpen && (
             <div
