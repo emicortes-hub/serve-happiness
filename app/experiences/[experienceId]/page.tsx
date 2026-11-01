@@ -81,14 +81,15 @@ export default function ProSalesTrainingExperience(props: PageProps) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [userTimeZone, setUserTimeZone] = useState<string>('');
-
+  const [currentDay, setCurrentDay] = useState<number | null>(null);
   useEffect(() => {
-    try {
-      setUserTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone);
-    } catch {
-      setUserTimeZone('Local');
-    }
-  }, []);
+  try {
+    setUserTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  } catch {
+    setUserTimeZone('Local');
+  }
+  setCurrentDay(new Date().getDay());
+}, []);
 
   const toggleFaq = (idx: number) => {
     setOpenFaq(openFaq === idx ? null : idx);
@@ -267,7 +268,7 @@ export default function ProSalesTrainingExperience(props: PageProps) {
         </a>
       </header>
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '38px 24px 72px' }}>
+<div style={{ maxWidth: '1200px', margin: '0 auto', padding: '38px 24px 72px' }}>
         {/* BLOQUE DE HORARIOS DE SESIONES EN VIVO CON MARCELO GUTIERREZ */}
         <div
           style={{
@@ -319,24 +320,92 @@ export default function ProSalesTrainingExperience(props: PageProps) {
           >
             {SESSIONS.map((sess, idx) => {
               const localTime = getLocalSessionTime(sess.utcHour, sess.utcMinute);
+              
+              // Mapeo del día según el texto de sess.day
+              const dayLower = sess.day.toLowerCase();
+              let sessionDayNum = 2; // Default Martes
+              if (dayLower.includes('mar') || dayLower.includes('tues')) sessionDayNum = 2;
+              if (dayLower.includes('mié') || dayLower.includes('mie') || dayLower.includes('wed')) sessionDayNum = 3;
+              if (dayLower.includes('jue') || dayLower.includes('thur')) sessionDayNum = 4;
+
+              const isToday = currentDay === sessionDayNum;
+              
+              // Cálculo de la próxima sesión
+              const nextTargetDay =
+                currentDay === null || currentDay <= 2
+                  ? 2
+                  : currentDay === 3
+                  ? 3
+                  : currentDay === 4
+                  ? 4
+                  : 2;
+
+              const isNext = !isToday && nextTargetDay === sessionDayNum;
+              const isHighlighted = isToday || isNext;
+
               return (
                 <div
                   key={idx}
                   style={{
-                    backgroundColor: '#081120',
-                    border: '1px solid #16243d',
+                    backgroundColor: isToday ? '#0d1d36' : isHighlighted ? '#0c182c' : '#081120',
+                    border: isToday
+                      ? '1.5px solid #22c55e'
+                      : isHighlighted
+                      ? '1.5px solid rgba(0, 162, 255, 0.5)'
+                      : '1px solid #16243d',
+                    boxShadow: isToday
+                      ? '0 0 18px rgba(34, 197, 94, 0.25)'
+                      : isHighlighted
+                      ? '0 0 14px rgba(0, 162, 255, 0.15)'
+                      : 'none',
+                    opacity: isHighlighted ? 1 : 0.6,
                     borderRadius: '10px',
                     padding: '12px 14px',
+                    transition: 'all 0.3s ease',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#00a2ff', textTransform: 'uppercase' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        color: isToday ? '#22c55e' : '#00a2ff',
+                        textTransform: 'uppercase',
+                      }}
+                    >
                       {sess.day}
                     </span>
-                    <span style={{ fontSize: '10px', color: '#22c55e', fontWeight: 700 }}>
-                      ● En Vivo
-                    </span>
+
+                    {isToday ? (
+                      <span
+                        style={{
+                          fontSize: '10px',
+                          color: '#22c55e',
+                          fontWeight: 700,
+                          backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                          border: '1px solid rgba(34, 197, 94, 0.35)',
+                          padding: '2px 7px',
+                          borderRadius: '8px',
+                        }}
+                      >
+                        ● Hoy en Vivo
+                      </span>
+                    ) : isNext ? (
+                      <span
+                        style={{
+                          fontSize: '10px',
+                          color: '#00a2ff',
+                          fontWeight: 700,
+                          backgroundColor: 'rgba(0, 162, 255, 0.12)',
+                          padding: '2px 7px',
+                          borderRadius: '8px',
+                        }}
+                      >
+                        Próxima
+                      </span>
+                    ) : null}
                   </div>
+
                   <div style={{ fontSize: '13px', fontWeight: 800, color: '#ffffff', marginBottom: '4px' }}>
                     {sess.title}
                   </div>
@@ -344,7 +413,7 @@ export default function ProSalesTrainingExperience(props: PageProps) {
                     🇲🇽 {sess.mexicoTime}
                   </div>
                   {localTime && (
-                    <div style={{ fontSize: '10px', color: '#60a5fa', marginTop: '2px' }}>
+                    <div style={{ fontSize: '10px', color: '#60a5fa', marginTop: '3px' }}>
                       🕒 Tu hora local: {localTime}
                     </div>
                   )}
