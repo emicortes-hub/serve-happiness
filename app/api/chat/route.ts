@@ -25,49 +25,64 @@ Reglas:
 - Si reportan fallos técnicos o problemas con pagos en Whop, oriéntalos a abrir la solicitud en el formulario contiguo.
     `.trim();
 
-    // Historial de conversación formateado para Gemini
+    // Historial limpio
     const contents = (history || []).map((msg: { role: string; content: string }) => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: msg.content }],
     }));
 
-    // Mensaje actual del usuario
+    // Mensaje actual del alumno
     contents.push({
       role: 'user',
       parts: [{ text: message }],
     });
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey.trim()}`;
-
-    const geminiRes = await fetch(url, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json'
+    const payload = {
+      system_instruction: {
+        parts: [{ text: systemInstruction }],
       },
-      body: JSON.stringify({
-        system_instruction: {
-          parts: [{ text: systemInstruction }],
-        },
-        contents,
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 500,
-        },
-      }),
-    });
+      contents,
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 500,
+      },
+    };
 
-    const data = await geminiRes.json();
+    // Lista de modelos ordenados por prioridad en la capa gratuita
+    const candidateModels = [
+      'gemini-2.5-flash',
+      'gemini-3.8-flash',
+      'gemini-1.5-flash-8b',
+    ];
 
-    if (!geminiRes.ok) {
-      console.error('Error detallado de Gemini API:', JSON.stringify(data));
-      const errorMsg = data?.error?.message || "Error al conectar con Gemini API";
-      return NextResponse.json({
-        reply: `Aviso del sistema: ${errorMsg}`
-      });
+    let lastErrorMsg = 'Servicio temporalmente ocupado.';
+
+    for (const model of candidateModels) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+          return NextResponse.json({
+            reply: data.candidates[0].content.parts[0].text,
+          });
+        }
+
+        lastErrorMsg = data?.error?.message || lastErrorMsg;
+      } catch {
+        // Continuar al siguiente modelo disponible
+      }
     }
 
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "No obtuve una respuesta válida.";
-    return NextResponse.json({ reply });
+    return NextResponse.json({
+      reply: `Aviso del sistema: ${lastErrorMsg}`,
+    });
 
   } catch (error: any) {
     console.error('Error en /api/chat:', error);
