@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -11,11 +11,20 @@ export default function AIChatBox() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: '¡Hola! Soy tu asistente de ventas IA. Si tienes dudas rápidas sobre objeciones comerciales o las dinámicas de las llamadas, pregúntame.',
+      content: '¡Hola! Soy tu asistente táctico de ventas. Pregúntame sobre cómo destrabar una objeción puntual o las dinámicas del método.',
     },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, loading]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +54,7 @@ export default function AIChatBox() {
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: 'Error de conexión. Intenta nuevamente o abre una solicitud de soporte.' },
+        { role: 'assistant', content: 'Error de conexión. Intenta nuevamente.' },
       ]);
     } finally {
       setLoading(false);
@@ -56,17 +65,17 @@ export default function AIChatBox() {
     <div
       style={{
         backgroundColor: '#0f192d',
-        border: '1px solid rgba(245, 158, 11, 0.35)',
+        border: '1px solid rgba(245, 158, 11, 0.4)',
         borderRadius: '14px',
-        padding: '24px',
-        boxShadow: '0 16px 36px -12px rgba(0, 0, 0, 0.7), 0 0 20px -8px rgba(245, 158, 11, 0.15)',
+        padding: '20px',
+        boxShadow: '0 16px 36px -12px rgba(0, 0, 0, 0.7), 0 0 24px -10px rgba(245, 158, 11, 0.2)',
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        height: '420px',
+        height: '460px',
       }}
     >
-      {/* Franja superior dorada/ámbar */}
+      {/* Línea dorada superior */}
       <div
         style={{
           position: 'absolute',
@@ -81,43 +90,43 @@ export default function AIChatBox() {
       />
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px', paddingBottom: '12px', borderBottom: '1px solid #1a2a47' }}>
         <div
           style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '10px',
-            backgroundColor: 'rgba(245, 158, 11, 0.12)',
-            border: '1px solid rgba(245, 158, 11, 0.28)',
+            width: '34px',
+            height: '34px',
+            borderRadius: '9px',
+            backgroundColor: 'rgba(245, 158, 11, 0.15)',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
             color: '#fbbf24',
             display: 'grid',
             placeItems: 'center',
-            fontSize: '16px',
+            fontSize: '15px',
             flexShrink: 0,
           }}
         >
           ⚡
         </div>
         <div>
-          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#ffffff' }}>
+          <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#ffffff' }}>
             Asistente Táctico IA
           </h3>
-          <p style={{ margin: 0, fontSize: '12px', color: '#fbbf24', opacity: 0.9 }}>
+          <p style={{ margin: 0, fontSize: '11.5px', color: '#fbbf24', opacity: 0.9 }}>
             Respuestas automáticas sobre objeciones y método
           </p>
         </div>
       </div>
 
-      {/* Lista de Mensajes */}
+      {/* Historial de Mensajes */}
       <div
         style={{
           flex: 1,
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: '10px',
+          gap: '12px',
           paddingRight: '6px',
-          marginBottom: '14px',
+          marginBottom: '12px',
         }}
       >
         {messages.map((m, idx) => (
@@ -130,15 +139,16 @@ export default function AIChatBox() {
           >
             <div
               style={{
-                maxWidth: '85%',
+                maxWidth: '90%',
                 fontSize: '12.5px',
-                lineHeight: '1.5',
-                padding: '10px 14px',
+                lineHeight: '1.6',
+                padding: '12px 14px',
                 borderRadius: '12px',
+                whiteSpace: 'pre-wrap', // Mantiene los saltos de línea limpios
                 ...(m.role === 'user'
                   ? {
                       backgroundColor: '#f59e0b',
-                      color: '#0f172a',
+                      color: '#0b1120',
                       fontWeight: 600,
                       borderBottomRightRadius: '2px',
                     }
@@ -166,13 +176,14 @@ export default function AIChatBox() {
                 borderRadius: '10px',
               }}
             >
-              Pensando respuesta...
+              Consultando táctica...
             </div>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Input y Botón de Envío */}
+      {/* Formulario de consulta */}
       <form onSubmit={sendMessage} style={{ display: 'flex', gap: '8px', paddingTop: '10px', borderTop: '1px solid #1a2a47' }}>
         <input
           type="text"
@@ -195,7 +206,7 @@ export default function AIChatBox() {
           disabled={loading || !input.trim()}
           style={{
             backgroundColor: '#f59e0b',
-            color: '#0f172a',
+            color: '#0b1120',
             border: 'none',
             borderRadius: '10px',
             padding: '0 16px',

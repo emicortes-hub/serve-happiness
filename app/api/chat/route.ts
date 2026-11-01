@@ -17,18 +17,24 @@ export async function POST(req: Request) {
 
     const systemInstruction = `
 Eres el Asistente Táctico Oficial de "Pro Sales Training" (academia de ventas liderada por Marcelo Gutiérrez).
-Tu objetivo es resolver dudas de alumnos sobre manejo de objeciones comerciales y la dinámica del programa.
-Reglas:
-- Sé directo, práctico y profesional con tono de mentor de ventas.
-- Explica de forma concisa cómo abordar objeciones como "no tengo presupuesto", "tengo que consultarlo" o "es caro".
-- Recuerda que las sesiones de roleplay en vivo son los martes y jueves a las 18:00 (Hora CDMX).
-- Si reportan fallos técnicos o problemas con pagos en Whop, oriéntalos a abrir la solicitud en el formulario contiguo.
+Tu rol es responder como un mentor de ventas senior: directo, práctico, profesional y empático con el cerrador.
+
+REGLAS OBLIGATORIAS:
+- RESPONDE SIEMPRE EN ESPAÑOL. Está estrictamente prohibido responder en inglés.
+- NO muestres razonamiento interno, procesos de pensamiento, metas ni metadatos ("Goal:", "Persona:", "Step 1:").
+- Ve directo al grano: 1 breve diagnóstico de la objeción, seguido de 2 o 3 opciones prácticas de qué decir exactamente entre comillas, y cierra con 1 tip clave.
+- Respuestas breves, directas y con saltos de línea claros.
+- Si preguntan por las sesiones en vivo: son martes y jueves a las 18:00 (Hora CDMX).
+- Si reportan fallos técnicos o pagos en Whop: indícales usar el formulario de soporte de la izquierda.
     `.trim();
 
-    const contents = (history || []).map((msg: { role: string; content: string }) => ({
-      role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: msg.content }],
-    }));
+    // Historial limpio
+    const contents = (history || [])
+      .filter((msg: { role: string; content: string }) => !msg.content.startsWith('Aviso del sistema:'))
+      .map((msg: { role: string; content: string }) => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content }],
+      }));
 
     contents.push({
       role: 'user',
@@ -41,35 +47,24 @@ Reglas:
       },
       contents,
       generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 500,
+        temperature: 0.5,
+        maxOutputTokens: 600,
       },
     };
 
-    // 1. Obtener la lista real de modelos disponibles para tu API Key
+    // Consultamos los modelos disponibles para la key
     const listRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
     );
     const listData = await listRes.json();
 
     if (!listRes.ok) {
-      const errorMsg = listData?.error?.message || "No se pudo consultar la lista de modelos de Gemini.";
-      return NextResponse.json({ reply: `Aviso del sistema: ${errorMsg}` });
+      return NextResponse.json({ reply: "Inconveniente temporal de conexión con el asistente." });
     }
 
-    // 2. Filtrar solo los modelos que soportan generateContent
     const availableModels: string[] = (listData.models || [])
       .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
       .map((m: any) => m.name.replace(/^models\//, ''));
-
-    if (availableModels.length === 0) {
-      return NextResponse.json({
-        reply: "Aviso del sistema: No hay modelos con generateContent habilitados en esta cuenta."
-      });
-    }
-
-    // 3. Probar en orden los modelos compatibles encontrados
-    let lastError = 'No se pudo generar respuesta.';
 
     for (const model of availableModels) {
       try {
@@ -82,20 +77,23 @@ Reglas:
 
         const data = await res.json();
 
-        if (res.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-          return NextResponse.json({
-            reply: data.candidates[0].content.parts[0].text,
-          });
-        }
+        if (res.ok && data.candidates?.[0]?.content?.parts) {
+          // Extraer únicamente la parte de texto final del modelo
+          const parts = data.candidates[0].content.parts;
+          const textPart = parts.find((p: any) => p.text && !p.thought) || parts[parts.length - 1];
+          const replyText = textPart?.text?.trim();
 
-        lastError = data?.error?.message || lastError;
-      } catch (err: any) {
-        lastError = err.message;
+          if (replyText) {
+            return NextResponse.json({ reply: replyText });
+          }
+        }
+      } catch {
+        // Intentar siguiente modelo si falla
       }
     }
 
     return NextResponse.json({
-      reply: `Aviso del sistema: ${lastError} (Modelos detectados: ${availableModels.join(', ')})`,
+      reply: "No pude procesar la consulta en este instante. Por favor intenta de nuevo en unos segundos."
     });
 
   } catch (error: any) {
