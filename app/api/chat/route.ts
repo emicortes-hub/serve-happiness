@@ -8,7 +8,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Mensaje requerido' }, { status: 400 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY?.trim();
     if (!apiKey) {
       return NextResponse.json({
         reply: "El asistente de IA está en configuración. Por favor, utiliza el formulario de ticket para que un mentor te asista de inmediato."
@@ -25,13 +25,11 @@ Reglas:
 - Si reportan fallos técnicos o problemas con pagos en Whop, oriéntalos a abrir la solicitud en el formulario contiguo.
     `.trim();
 
-    // Historial limpio
     const contents = (history || []).map((msg: { role: string; content: string }) => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: msg.content }],
     }));
 
-    // Mensaje actual del alumno
     contents.push({
       role: 'user',
       parts: [{ text: message }],
@@ -48,18 +46,34 @@ Reglas:
       },
     };
 
-    // Lista de modelos ordenados por prioridad en la capa gratuita
-    const candidateModels = [
-      'gemini-2.5-flash',
-      'gemini-3.8-flash',
-      'gemini-1.5-flash-8b',
-    ];
+    // 1. Obtener la lista real de modelos disponibles para tu API Key
+    const listRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+    );
+    const listData = await listRes.json();
 
-    let lastErrorMsg = 'Servicio temporalmente ocupado.';
+    if (!listRes.ok) {
+      const errorMsg = listData?.error?.message || "No se pudo consultar la lista de modelos de Gemini.";
+      return NextResponse.json({ reply: `Aviso del sistema: ${errorMsg}` });
+    }
 
-    for (const model of candidateModels) {
+    // 2. Filtrar solo los modelos que soportan generateContent
+    const availableModels: string[] = (listData.models || [])
+      .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
+      .map((m: any) => m.name.replace(/^models\//, ''));
+
+    if (availableModels.length === 0) {
+      return NextResponse.json({
+        reply: "Aviso del sistema: No hay modelos con generateContent habilitados en esta cuenta."
+      });
+    }
+
+    // 3. Probar en orden los modelos compatibles encontrados
+    let lastError = 'No se pudo generar respuesta.';
+
+    for (const model of availableModels) {
       try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -74,14 +88,14 @@ Reglas:
           });
         }
 
-        lastErrorMsg = data?.error?.message || lastErrorMsg;
-      } catch {
-        // Continuar al siguiente modelo disponible
+        lastError = data?.error?.message || lastError;
+      } catch (err: any) {
+        lastError = err.message;
       }
     }
 
     return NextResponse.json({
-      reply: `Aviso del sistema: ${lastErrorMsg}`,
+      reply: `Aviso del sistema: ${lastError} (Modelos detectados: ${availableModels.join(', ')})`,
     });
 
   } catch (error: any) {
