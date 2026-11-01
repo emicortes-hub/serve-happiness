@@ -1,19 +1,5 @@
 import { NextResponse } from 'next/server';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
-
-export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
-}
-
-export async function GET() {
-  return NextResponse.json({ ok: true, status: 'API de soporte operativa' }, { headers: corsHeaders });
-}
-
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -23,69 +9,87 @@ export async function POST(req: Request) {
     const chatId = process.env.TELEGRAM_CHAT_ID;
 
     if (!token || !chatId) {
-      console.warn("Faltan variables TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID");
-      return NextResponse.json(
-        { ok: false, error: "Credenciales de Telegram no configuradas" },
-        { status: 500, headers: corsHeaders }
-      );
+      console.error('Faltan variables de entorno: TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID');
+      return NextResponse.json({ ok: false, error: 'Configuración incompleta' }, { status: 500 });
     }
 
-    const cleanPhone = (whatsapp || '').replace(/[^0-9]/g, '');
-    const waLink = cleanPhone ? `https://wa.me/${cleanPhone}` : null;
-    const waText = waLink ? `<a href="${waLink}">${whatsapp}</a>` : (whatsapp || 'No especificado');
+    const cleanPhone = (whatsapp || '').replace(/\D/g, '');
 
-    let text = '';
-
+    let header = '🚨 <b>NUEVO TICKET REGISTRADO</b>';
     if (type === 'escalation') {
-      text =
-        `🚨 <b>¡TICKET ESCALADO A MENTOR!</b> 🚨\n\n` +
-        `🆔 <b>Caso:</b> <code>${caseId}</code>\n` +
-        `👤 <b>Alumno:</b> ${name}\n` +
-        `📧 <b>Email:</b> ${email}\n` +
-        `📱 <b>WhatsApp:</b> ${waText}\n` +
-        `📚 <b>Programa:</b> ${program}\n` +
-        `📝 <b>Consulta / Bloqueo:</b>\n<i>"${message}"</i>\n\n` +
-        `⚠️ <i>Requiere revisión directa de mentores.</i>`;
+      header = '⚡ <b>TICKET ESCALADO A MENTOR HUMANO</b>';
     } else if (type === 'resolved') {
-      text =
-        `✅ <b>TICKET RESUELTO CON ÉXITO</b> ✅\n\n` +
-        `🆔 <b>Caso:</b> <code>${caseId}</code>\n` +
-        `👤 <b>Alumno:</b> ${name}\n` +
-        `📧 <b>Email:</b> ${email}\n` +
-        `📱 <b>WhatsApp:</b> ${waText}\n` +
-        `📚 <b>Programa:</b> ${program}\n` +
-        `📝 <b>Consulta Original:</b>\n<i>"${message}"</i>\n\n` +
-        `👌 <i>El alumno marcó "Duda Aclarada". No requiere acción.</i>`;
-    } else {
-      text =
-        `📩 <b>NUEVA CONSULTA - PRO SALES TRAINING</b>\n\n` +
-        `🆔 <b>Caso:</b> <code>${caseId}</code>\n` +
-        `👤 <b>Alumno:</b> ${name}\n` +
-        `📧 <b>Email:</b> ${email}\n` +
-        `📱 <b>WhatsApp:</b> ${waText}\n` +
-        `📚 <b>Programa:</b> ${program}\n` +
-        `📝 <b>Detalle:</b>\n<i>"${message}"</i>`;
+      header = '✅ <b>TICKET MARCADO COMO RESUELTO</b>';
     }
+
+    const text = `
+${header}
+
+<b>Folio:</b> <code>${caseId}</code>
+<b>Alumno:</b> ${name}
+<b>Programa:</b> ${program}
+<b>Correo:</b> <code>${email}</code>
+<b>WhatsApp:</b> <code>${whatsapp}</code>
+
+<b>Consulta comercial:</b>
+<i>"${message}"</i>
+    `.trim();
+
+    const inlineKeyboard: any[] = [];
+
+    const contactRow = [];
+    if (cleanPhone) {
+      contactRow.push({
+        text: '💬 Abrir WhatsApp',
+        url: `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+          `Hola ${name}, te contacto del equipo de Pro Sales Training respecto a tu consulta (${caseId}).`
+        )}`,
+      });
+    }
+
+    if (email) {
+      contactRow.push({
+        text: '✉️ Enviar Correo',
+        url: `mailto:${email}?subject=${encodeURIComponent(
+          `Soporte Pro Sales Training — Caso ${caseId}`
+        )}`,
+      });
+    }
+
+    if (contactRow.length > 0) {
+      inlineKeyboard.push(contactRow);
+    }
+
+    inlineKeyboard.push([
+      {
+        text: '🎥 Entrar a Sala Zoom',
+        url: 'https://us02web.zoom.us/j/9272409073?pwd=feP7nGIvZidKJBcqb6v3roewaQrQX1.1',
+      },
+    ]);
 
     const telegramRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: chatId,
-        text: text,
+        text,
         parse_mode: 'HTML',
-        disable_web_page_preview: true,
+        reply_markup: {
+          inline_keyboard: inlineKeyboard,
+        },
       }),
     });
 
-    const data = await telegramRes.json();
+    const telegramData = await telegramRes.json();
 
-    if (!telegramRes.ok) {
-      return NextResponse.json({ ok: false, error: data.description }, { status: 500, headers: corsHeaders });
+    if (!telegramData.ok) {
+      console.error('Error devuelto por Telegram API:', telegramData);
+      return NextResponse.json({ ok: false, error: telegramData.description }, { status: 400 });
     }
 
-    return NextResponse.json({ ok: true }, { headers: corsHeaders });
-  } catch (err: any) {
-    return NextResponse.json({ ok: false, error: err.message }, { status: 500, headers: corsHeaders });
+    return NextResponse.json({ ok: true, data: telegramData.result });
+  } catch (error: any) {
+    console.error('Excepción al enviar ticket a Telegram:', error);
+    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
 }
