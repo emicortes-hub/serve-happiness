@@ -11,67 +11,54 @@ export async function POST(req: Request) {
     const apiKey = process.env.GEMINI_API_KEY?.trim();
     if (!apiKey) {
       return NextResponse.json({
-        reply: "El asistente de IA está en configuración. Por favor, utiliza el formulario de ticket para que un mentor te asista de inmediato."
+        reply: 'El asistente de IA está en configuración. Por favor, utiliza el formulario de ticket para que un mentor te asista de inmediato.',
       });
     }
 
-    // 1. Obtener día y hora actual fijados en Ciudad de México (CDMX)
+    // 1. Detección temporal en zona horaria Miami / Eastern
     const now = new Date();
-    const cdmxDayName = new Intl.DateTimeFormat('es-MX', {
-      timeZone: 'America/Mexico_City',
+    const miamiDayName = new Intl.DateTimeFormat('es-US', {
+      timeZone: 'America/New_York',
       weekday: 'long',
-    }).format(now);
+    }).format(now).toLowerCase();
 
-    // 0 = Dom, 1 = Lun, 2 = Mar, 3 = Mié, 4 = Jue, 5 = Vie, 6 = Sáb
-    const dayOfWeekParts = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Mexico_City',
-      weekday: 'short',
-    }).format(now);
+    // Obtener día de la semana (0 = Dom, 1 = Lun, 2 = Mar, 3 = Mié, 4 = Jue, 5 = Vie, 6 = Sáb) en Miami
+    const miamiDateStr = now.toLocaleDateString('en-US', { timeZone: 'America/New_York' });
+    const dayOfWeek = new Date(miamiDateStr).getDay();
 
-    const dayMap: { [key: string]: number } = {
-      Sun: 0,
-      Mon: 1,
-      Tue: 2,
-      Wed: 3,
-      Thu: 4,
-      Fri: 5,
-      Sat: 6,
-    };
-    const currentDay = dayMap[dayOfWeekParts] ?? now.getDay();
-
-    // 2. Determinar contextualmente cuál es la sesión de hoy o la próxima
+    // 2. Avisos con los nuevos horarios de Marcelo
     let scheduleNotice = '';
-    if (currentDay === 2) {
-      scheduleNotice = 'HOY es MARTES: A las 8:00 AM (CDMX) es la sesión en vivo "PRO SCRIPT LAB" con Marcelo Gutiérrez.';
-    } else if (currentDay === 3) {
-      scheduleNotice = 'HOY es MIÉRCOLES: A las 7:00 PM (CDMX) es la sesión en vivo "PRO HOT SEAT" con Marcelo Gutiérrez.';
-    } else if (currentDay === 4) {
-      scheduleNotice = 'HOY es JUEVES: A las 8:00 AM (CDMX) es la sesión en vivo "PRO ROLE PLAY" con Marcelo Gutiérrez.';
-    } else if (currentDay === 1) {
-      scheduleNotice = 'MAÑANA es MARTES: A las 8:00 AM (CDMX) es la próxima sesión en vivo ("PRO SCRIPT LAB").';
-    } else {
-      // Viernes (5), Sábado (6) o Domingo (0)
-      scheduleNotice = `Hoy es ${cdmxDayName}. NO hay sesión programada para hoy ni para mañana. La PRÓXIMA sesión en vivo es el MARTES a las 8:00 AM (CDMX): "PRO SCRIPT LAB".`;
+
+    if (dayOfWeek === 2) { // Martes
+      scheduleNotice = 'Hoy MARTES a las 10:00 AM (Hora Miami / ET) tenemos sesión en vivo de PRO SCRIPT LAB con Marcelo Gutiérrez.';
+    } else if (dayOfWeek === 3) { // Miércoles
+      scheduleNotice = 'Hoy MIÉRCOLES a las 9:00 PM (Hora Miami / ET) tenemos sesión en vivo de PRO HOT SEAT con Marcelo Gutiérrez.';
+    } else if (dayOfWeek === 4) { // Jueves
+      scheduleNotice = 'Hoy JUEVES a las 10:00 AM (Hora Miami / ET) tenemos sesión en vivo de PRO ROLE PLAY con Marcelo Gutiérrez.';
+    } else if (dayOfWeek === 1) { // Lunes
+      scheduleNotice = 'Mañana MARTES a las 10:00 AM (Hora Miami / ET) es la próxima sesión: PRO SCRIPT LAB.';
+    } else { // Viernes, Sábado o Domingo
+      scheduleNotice = 'La próxima sesión en vivo es el MARTES a las 10:00 AM (Hora Miami / ET): PRO SCRIPT LAB.';
     }
 
-    const systemInstruction = `
-Eres el Asistente Táctico Oficial de "Pro Sales Training" (academia de ventas liderada por Marcelo Gutiérrez).
-Tu rol es responder como un mentor de ventas senior: directo, práctico y profesional.
+    // 3. System Prompt unificado
+    const systemPrompt = `Eres el Asistente Táctico IA de Pro Sales Training (entrenamiento de Marcelo Gutiérrez).
+Tu objetivo es resolver objeciones de ventas y consultas tácticas de alumnos de alto valor.
 
 CONTEXTO TEMPORAL ACTUAL:
-- Día oficial actual: ${cdmxDayName.toUpperCase()} (Hora CDMX).
-- Estado de la agenda de sesiones: ${scheduleNotice}
+- Hoy es día: ${miamiDayName} (Hora Miami / ET).
+- Información de sesiones: ${scheduleNotice}
 
-CALENDARIO OFICIAL DE SESIONES EN VIVO (Con Marcelo Gutiérrez vía Zoom):
-- Martes: "PRO SCRIPT LAB" a las 8:00 AM (CDMX).
-- Miércoles: "PRO HOT SEAT" a las 7:00 PM (CDMX).
-- Jueves: "PRO ROLE PLAY" a las 8:00 AM (CDMX).
-(Viernes, Sábado, Domingo y Lunes NO hay sesiones).
+CALENDARIO OFICIAL DE SESIONES EN VIVO (HORA MIAMI / ET):
+1. Martes 10:00 AM (Miami / ET) - PRO SCRIPT LAB (pulido táctico de aperturas y objeciones).
+2. Miércoles 9:00 PM (Miami / ET) - PRO HOT SEAT (auditoría de llamadas en vivo).
+3. Jueves 10:00 AM (Miami / ET) - PRO ROLE PLAY (simulación intensiva de cierre y debate).
 
-REGLAS CRÍTICAS DE TIEMPO:
-- NUNCA digas que "mañana jueves" hay sesión a menos que el contexto temporal confirme que hoy es miércoles.
-- Si hoy es viernes, sábado, domingo o lunes, la siguiente sesión es indefectiblemente el próximo MARTES a las 8:00 AM.
-- Si vas a mencionar una sesión o un recordatorio al final, básate estrictamente en el "Estado de la agenda de sesiones" proporcionado arriba.
+REGLAS DE TIEMPO ESTRICTAS:
+- Todas las referencias horarias deben expresarse en Hora Miami / ET.
+- NUNCA digas que mañana hay sesión a menos que hoy sea lunes (para la del martes), o martes (para la del miércoles), o miércoles (para la del jueves).
+- Si hoy es viernes, sábado o domingo, la próxima sesión es hasta el MARTES.
+- Si incluyes un recordatorio al final, usa exactamente la información de "Información de sesiones" calculada para hoy.
 
 REGLAS DE FORMATO Y ESTILO:
 - Responde EXCLUSIVAMENTE en español.
@@ -83,12 +70,11 @@ REGLAS DE FORMATO Y ESTILO:
   3. Un consejo táctico de cierre.
 
 SOPORTE Y ACCESOS:
-- Para fallos técnicos, facturación o problemas de acceso en Whop, indícales utilizar el formulario contiguo para contactar a soporte humano.
-    `.trim();
+- Para fallos técnicos, facturación o problemas de acceso en Whop, indícales utilizar el formulario contiguo para contactar a soporte humano.`.trim();
 
-    // Historial limpio
+    // 4. Historial limpio
     const contents = (history || [])
-      .filter((msg: { role: string; content: string }) => !msg.content.startsWith('Aviso del sistema:'))
+      .filter((msg: { role: string; content: string }) => !msg.content?.startsWith('Aviso del sistema:'))
       .map((msg: { role: string; content: string }) => ({
         role: msg.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: msg.content }],
@@ -101,7 +87,7 @@ SOPORTE Y ACCESOS:
 
     const payload = {
       system_instruction: {
-        parts: [{ text: systemInstruction }],
+        parts: [{ text: systemPrompt }],
       },
       contents,
       generationConfig: {
@@ -120,7 +106,7 @@ SOPORTE Y ACCESOS:
     const listData = await listRes.json();
 
     if (!listRes.ok) {
-      return NextResponse.json({ reply: "Inconveniente temporal de conexión con el asistente." });
+      return NextResponse.json({ reply: 'Inconveniente temporal de conexión con el asistente.' });
     }
 
     const availableModels: string[] = (listData.models || [])
@@ -150,7 +136,7 @@ SOPORTE Y ACCESOS:
           const parts = data.candidates[0].content.parts;
           const nonThoughtParts = parts.filter((p: any) => !p.thought && p.text);
           const chosenPart = nonThoughtParts.length > 0 ? nonThoughtParts[nonThoughtParts.length - 1] : parts[parts.length - 1];
-          let cleanReply = chosenPart?.text?.trim() || "";
+          const cleanReply = chosenPart?.text?.trim() || '';
 
           if (cleanReply) {
             return NextResponse.json({ reply: cleanReply });
@@ -162,9 +148,8 @@ SOPORTE Y ACCESOS:
     }
 
     return NextResponse.json({
-      reply: "No pude procesar la consulta en este instante. Por favor intenta de nuevo en unos segundos."
+      reply: 'No pude procesar la consulta en este instante. Por favor intenta de nuevo en unos segundos.',
     });
-
   } catch (error: any) {
     console.error('Error en /api/chat:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

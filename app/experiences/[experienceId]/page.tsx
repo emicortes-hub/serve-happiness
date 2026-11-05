@@ -40,24 +40,29 @@ const FAQ_ITEMS = [
 // Horarios base en Ciudad de México (hora central: UTC-6)
 const SESSIONS = [
   {
-    title: 'PRO SCRIPT LAB',
     day: 'Martes',
-    mexicoTime: '8:00 AM (CDMX)',
-    utcHour: 14, // 8 AM UTC-6 = 14:00 UTC
+    title: 'PRO SCRIPT LAB',
+    miamiTime: '10:00 AM (Miami / ET)',
+    desc: 'Pulido táctico de aperturas y objeciones',
+    // 10:00 AM Miami (EDT UTC-4 es 14:00 UTC / EST UTC-5 es 15:00 UTC)
+    utcHour: 15,
     utcMinute: 0,
   },
   {
-    title: 'PRO HOT SEAT',
     day: 'Miércoles',
-    mexicoTime: '7:00 PM (CDMX)',
-    utcHour: 1, // 7 PM UTC-6 = 01:00 UTC siguiente día
+    title: 'PRO HOT SEAT',
+    miamiTime: '9:00 PM (Miami / ET)',
+    desc: 'Auditoría de llamadas de alumnos en vivo',
+    // 9:00 PM Miami (EDT UTC-4 es 01:00 UTC día sig / EST UTC-5 es 02:00 UTC día sig)
+    utcHour: 2,
     utcMinute: 0,
   },
   {
-    title: 'PRO ROLE PLAY',
     day: 'Jueves',
-    mexicoTime: '8:00 AM (CDMX)',
-    utcHour: 14, // 8 AM UTC-6 = 14:00 UTC
+    title: 'PRO ROLE PLAY',
+    miamiTime: '10:00 AM (Miami / ET)',
+    desc: 'Simulación intensiva de cierre y debate',
+    utcHour: 15,
     utcMinute: 0,
   },
 ];
@@ -287,9 +292,9 @@ export default function ProSalesTrainingExperience(props: PageProps) {
                 <strong style={{ fontSize: '14px', color: '#ffffff', display: 'block' }}>
                   Sesiones en Vivo con Marcelo Gutierrez
                 </strong>
-                <span style={{ fontSize: '11px', color: '#8b9bb4' }}>
-                  Horario oficial fijado en Hora Ciudad de México (CDMX) · Sala de Zoom
-                </span>
+               <span style={{ fontSize: '11px', color: '#8b9bb4' }}>
+  Horario oficial fijado en Hora Miami (ET) · Sala de Zoom
+</span>
               </div>
             </div>
             <a
@@ -410,7 +415,7 @@ export default function ProSalesTrainingExperience(props: PageProps) {
                     {sess.title}
                   </div>
                   <div style={{ fontSize: '11px', color: '#94a3b8' }}>
-                    🇲🇽 {sess.mexicoTime}
+                    🇺🇸 {sess.miamiTime}
                   </div>
                   {localTime && (
                     <div style={{ fontSize: '10px', color: '#60a5fa', marginTop: '3px' }}>
