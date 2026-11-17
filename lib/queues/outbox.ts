@@ -2,9 +2,9 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { findOrUpsertGhlContact } from '@/lib/integrations/highlevel/contacts';
 import { syncGhlSupportTicketObject } from '@/lib/integrations/highlevel/objects';
 import { syncGhlSupportOpportunity } from '@/lib/integrations/highlevel/opportunities';
+import { postInboundStudentMessageToGhl } from '@/lib/integrations/highlevel/conversations';
 
 export async function processOutboxBatch(limit = 10) {
-  // 1. Obtener eventos pendientes listos para procesar
   const { data: events, error } = await supabaseAdmin
     .from('integration_outbox')
     .select('*')
@@ -22,7 +22,6 @@ export async function processOutboxBatch(limit = 10) {
   let failed = 0;
 
   for (const event of events) {
-    // Bloquear evento marcándolo como PROCESSING
     await supabaseAdmin
       .from('integration_outbox')
       .update({
@@ -32,7 +31,6 @@ export async function processOutboxBatch(limit = 10) {
       .eq('id', event.id);
 
     try {
-      // Leer estado actual del ticket en Supabase (fuente de verdad)
       const { data: ticket, error: ticketErr } = await supabaseAdmin
         .from('support_tickets')
         .select('*')
@@ -77,13 +75,37 @@ export async function processOutboxBatch(limit = 10) {
         status: ticket.status,
       });
 
-      // Paso D: Persistir IDs de GHL en support_tickets
+      // Paso D: Publicar en Conversations de GHL cuando es creación o nuevo mensaje del alumno
+      let conversationId = ticket.ghl_conversation_id || null;
+      const isTicketCreated = event.event_type === 'ticket.created';
+      const isStudentMessage = event.event_type === 'ticket.message.added';
+
+      if (isTicketCreated || isStudentMessage) {
+        const messageText =
+          event.payload?.message_body || ticket.description || 'Consulta del alumno';
+
+        conversationId = await postInboundStudentMessageToGhl({
+          existingConversationId: ticket.ghl_conversation_id,
+          contactId,
+          ticketNumber: ticket.ticket_number,
+          program: ticket.program,
+          subject: ticket.subject,
+          messageBody: messageText,
+          isInitialTicket: isTicketCreated,
+        }).catch((convErr) => {
+          console.warn('Advertencia publicando mensaje en Conversations GHL:', convErr?.message);
+          return ticket.ghl_conversation_id || null;
+        });
+      }
+
+      // Paso E: Persistir los 4 IDs de GHL en support_tickets
       const { error: updateTicketErr } = await supabaseAdmin
         .from('support_tickets')
         .update({
           ghl_contact_id: contactId,
           ghl_record_id: recordId,
           ghl_opportunity_id: opportunityId,
+          ...(conversationId ? { ghl_conversation_id: conversationId } : {}),
           sync_status: 'SYNCED',
         })
         .eq('id', ticket.id);
@@ -92,7 +114,7 @@ export async function processOutboxBatch(limit = 10) {
         throw new Error(`Error actualizando support_tickets: ${updateTicketErr.message}`);
       }
 
-      // Paso E: Marcar evento de outbox como PROCESSED
+      // Paso F: Marcar evento de outbox como PROCESSED
       await supabaseAdmin
         .from('integration_outbox')
         .update({
