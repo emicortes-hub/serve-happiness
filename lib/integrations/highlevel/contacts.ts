@@ -8,6 +8,8 @@ export interface SyncContactInput {
   program?: string | null;
 }
 
+const STUDENT_TAG = 'Whop-Student';
+
 function splitName(fullName: string): { firstName: string; lastName: string } {
   const clean = (fullName || 'Alumno SERVE').trim();
   const parts = clean.split(/\s+/);
@@ -41,7 +43,7 @@ export async function findOrUpsertGhlContact(input: SyncContactInput): Promise<s
       await ghlRequest(`/contacts/${existing.id}`, {
         method: 'PUT',
         body: {
-          tags: ['serve-student'],
+          tags: [STUDENT_TAG],
           ...(input.phone ? { phone: input.phone } : {}),
         },
       }).catch(() => null);
@@ -62,6 +64,12 @@ export async function findOrUpsertGhlContact(input: SyncContactInput): Promise<s
 
     const existingByPhone = phoneSearch?.contacts?.[0];
     if (existingByPhone?.id) {
+      await ghlRequest(`/contacts/${existingByPhone.id}`, {
+        method: 'PUT',
+        body: {
+          tags: [STUDENT_TAG],
+        },
+      }).catch(() => null);
       return existingByPhone.id;
     }
   }
@@ -79,7 +87,7 @@ export async function findOrUpsertGhlContact(input: SyncContactInput): Promise<s
         ...(!isPlaceholderEmail ? { email: input.email.trim().toLowerCase() } : {}),
         ...(input.phone ? { phone: input.phone.trim() } : {}),
         source: 'SERVE Support 2.0',
-        tags: ['serve-student'],
+        tags: [STUDENT_TAG],
       },
     }
   );
