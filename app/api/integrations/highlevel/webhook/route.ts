@@ -13,36 +13,49 @@ function mapStageToTicketStatus(stageIdOrName: string): string | null {
   if (val === process.env.GHL_STAGE_ESCALATED_ID) return 'ESCALATED';
   if (val === process.env.GHL_STAGE_RESOLVED_ID) return 'RESOLVED';
 
-  // Mapeo por Stage Name (desde Workflow GHL)
-  if (lower === 'new / triage') return 'IN_REVIEW';
-  if (lower === 'in progress') return 'IN_PROGRESS';
-  if (lower === 'waiting student') return 'WAITING_STUDENT';
-  if (lower === 'escalated') return 'ESCALATED';
-  if (lower === 'resolved') return 'RESOLVED';
+  // Mapeo por Stage Name (Inglés y Español desde Workflow GHL)
+  if (lower === 'new / triage' || lower === 'nuevo / clasificación') return 'IN_REVIEW';
+  if (lower === 'in progress' || lower === 'en progreso') return 'IN_PROGRESS';
+  if (lower === 'waiting student' || lower === 'estudiante en espera') return 'WAITING_STUDENT';
+  if (lower === 'escalated' || lower === 'escalado') return 'ESCALATED';
+  if (lower === 'resolved' || lower === 'resuelto') return 'RESOLVED';
 
   return null;
 }
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const rawBody = await req.json();
+    // GHL Workflows envía los Datos Personalizados dentro de `customData` (o en la raíz según versión)
+    const custom = rawBody?.customData || {};
+    const body = { ...rawBody, ...custom };
+
     const eventType = body?.type || body?.event || '';
 
-    // 1. Respuesta saliente de un mentor desde GHL -> Alumno en Whop
+    // 1. Respuesta saliente / Nota de un mentor desde GHL -> Alumno en Whop
+    const noteOrMessageText = (
+      body?.body ||
+      body?.message ||
+      body?.note?.body ||
+      body?.last_note ||
+      ''
+    ).trim();
+
     if (
       eventType === 'OutboundMessage' ||
-      (body?.direction === 'outbound' && (body?.body || body?.message))
+      eventType === 'NoteCreate' ||
+      (body?.direction === 'outbound' && noteOrMessageText) ||
+      (noteOrMessageText && !body?.pipelineStageId && !body?.stageName && !body?.opportunity)
     ) {
-      const contactId = body?.contactId || body?.contact_id;
+      const contactId = body?.contactId || body?.contact_id || body?.id;
       const conversationId = body?.conversationId || body?.conversation_id;
-      const rawText: string = (body?.body || body?.message || '').trim();
 
-      if (!rawText || (!contactId && !conversationId)) {
+      if (!noteOrMessageText || (!contactId && !conversationId)) {
         return NextResponse.json({ ok: true, ignored: 'missing_fields' });
       }
 
       // Buscar folio explícito [PST-2026-XXXXXX] si el mentor lo incluyó, o el ticket abierto más reciente del contacto
-      const folioMatch = rawText.match(/\[(PST-\d{4}-\d{6})\]/i);
+      const folioMatch = noteOrMessageText.match(/\[(PST-\d{4}-\d{6})\]/i);
       let ticket: any = null;
 
       if (folioMatch?.[1]) {
@@ -79,23 +92,20 @@ export async function POST(req: Request) {
       }
 
       if (!ticket) {
-        return NextResponse.json({ ok: true, ignored: 'no_matching_ticket' });
+        return NextResponse.json({ ok: true, ignored: 'no_matching_ticket', contactId });
       }
 
-      // Limpiar prefijo [PST-2026-XXXXXX] si venía en el mensaje para mostrar limpio al alumno
-      const cleanMessage = rawText.replace(/^\[PST-\d{4}-\d{6}\]\s*/i, '').trim();
+      const cleanMessage = noteOrMessageText.replace(/^\[PST-\d{4}-\d{6}\]\s*/i, '').trim();
 
-      // Insertar mensaje público del mentor en support_messages
       await supabaseAdmin.from('support_messages').insert({
         ticket_id: ticket.id,
         tenant_id: ticket.tenant_id,
         sender_role: 'mentor',
-        sender_name: body?.userName || 'Equipo Pro Sales Training',
+        sender_name: body?.userName || body?.user?.name || 'Equipo Pro Sales Training',
         visibility: 'public',
         body: cleanMessage,
       });
 
-      // Mover ticket a WAITING_STUDENT si estaba abierto/en progreso
       if (['NEW', 'IN_REVIEW', 'ASSIGNED', 'IN_PROGRESS', 'ESCALATED'].includes(ticket.status)) {
         await supabaseAdmin
           .from('support_tickets')
@@ -112,7 +122,7 @@ export async function POST(req: Request) {
           tenant_id: ticket.tenant_id,
           actor_role: 'mentor',
           event_type: 'mentor.replied',
-          payload: { source: 'ghl_conversation', conversationId },
+          payload: { source: 'ghl_workflow', conversationId },
         });
       }
 
@@ -120,16 +130,27 @@ export async function POST(req: Request) {
     }
 
     // 2. Cambio de etapa en el Pipeline PST | Support Operations -> Estado en Supabase
+    const newStageValue =
+      body?.pipelineStageId ||
+      body?.pipeline_stage_id ||
+      body?.stageName ||
+      body?.opportunity?.pipeline_stage_id ||
+      body?.opportunity?.stage_name ||
+      '';
+
     if (
       eventType === 'OpportunityStageUpdate' ||
       eventType === 'OpportunityUpdate' ||
-      body?.pipelineStageId ||
-      body?.stageName
+      Boolean(newStageValue)
     ) {
-      const opportunityId = body?.id || body?.opportunityId || body?.opportunity_id;
-      const pipelineId = body?.pipelineId || body?.pipeline_id;
-      const newStageValue =
-        body?.pipelineStageId || body?.pipeline_stage_id || body?.stageName || '';
+      const opportunityId =
+        body?.opportunityId ||
+        body?.opportunity_id ||
+        body?.opportunity?.id ||
+        (eventType.startsWith('Opportunity') ? body?.id : null);
+
+      const pipelineId =
+        body?.pipelineId || body?.pipeline_id || body?.opportunity?.pipeline_id;
 
       if (pipelineId && pipelineId !== process.env.GHL_PIPELINE_ID) {
         return NextResponse.json({ ok: true, ignored: 'other_pipeline' });
@@ -137,7 +158,12 @@ export async function POST(req: Request) {
 
       const mappedStatus = mapStageToTicketStatus(newStageValue);
       if (!opportunityId || !mappedStatus) {
-        return NextResponse.json({ ok: true, ignored: 'unmapped_stage' });
+        return NextResponse.json({
+          ok: true,
+          ignored: 'unmapped_stage',
+          opportunityId,
+          newStageValue,
+        });
       }
 
       const { data: ticket } = await supabaseAdmin
@@ -174,7 +200,12 @@ export async function POST(req: Request) {
       });
     }
 
-    return NextResponse.json({ ok: true, ignored: 'unhandled_event_type', eventType });
+    return NextResponse.json({
+      ok: true,
+      ignored: 'unhandled_event_type',
+      eventType,
+      keys: Object.keys(body || {}),
+    });
   } catch (error: any) {
     console.error('Error en webhook de GoHighLevel:', error);
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
