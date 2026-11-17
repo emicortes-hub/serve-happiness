@@ -20,7 +20,9 @@ export async function GET(req: Request) {
 
     const { data, error } = await supabaseAdmin
       .from('support_tickets')
-      .select('id, ticket_number, program, subject, description, status, priority, resolution, created_at, updated_at, resolved_at')
+      .select(
+        'id, ticket_number, program, subject, description, status, priority, resolution, created_at, updated_at, resolved_at'
+      )
       .eq('student_whop_id', studentWhopId)
       .order('created_at', { ascending: false });
 
@@ -39,6 +41,7 @@ export async function POST(req: Request) {
     const parsed = createTicketInputSchema.safeParse(rawBody);
 
     if (!parsed.success) {
+      console.warn('Validación 400 en /api/support/tickets:', parsed.error.flatten(), rawBody);
       return NextResponse.json(
         { ok: false, error: 'Datos de ticket inválidos', details: parsed.error.flatten() },
         { status: 400 }
@@ -48,27 +51,48 @@ export async function POST(req: Request) {
     const input = parsed.data;
     const session = await getVerifiedWhopSession(req.headers);
 
-    const tenantId = input.tenantId || input.companyId || 'biz_jbDM2ID0GqGW3z';
-    const studentWhopId = session?.userId || input.studentWhopId || input.whopUserId || 'unverified_guest';
-    const studentName = (input.studentName || input.name || '').trim();
-    const studentEmail = (input.studentEmail || input.email || '').trim();
+    const tenantId =
+      input.tenantId || input.companyId || input.company_id || 'biz_jbDM2ID0GqGW3z';
+    const experienceId = input.experienceId || input.experience_id || null;
+    const studentWhopId =
+      session?.userId ||
+      input.studentWhopId ||
+      input.whopUserId ||
+      input.student_whop_id ||
+      'unverified_guest';
+
+    const studentName = (input.studentName || input.name || input.user_name || 'Alumno').trim();
+    const studentEmail = (
+      input.studentEmail ||
+      input.email ||
+      input.user_email ||
+      'sin-correo@prosales.local'
+    ).trim();
     const studentPhone = (input.studentPhone || input.whatsapp || '').trim() || null;
     const program = (input.program || 'Consulta General').trim();
     const description = (input.description || input.message || '').trim();
     const subject = (input.subject || `${program} - ${studentName}`).trim();
+    const actionType = (input.type || 'create').toLowerCase();
+    const caseId = (input.caseId || input.case_id || '').trim();
 
-    // Si es una acción de escalación o resolución sobre un folio existente
-    if (input.type === 'escalation' || input.type === 'resolved') {
-      if (!input.caseId) {
-        return NextResponse.json({ ok: false, error: 'Folio requerido para actualizar estado' }, { status: 400 });
+    // Acción sobre un ticket existente (escalación o resolución)
+    if (actionType === 'escalation' || actionType === 'resolved') {
+      if (!caseId) {
+        console.warn('Error 400: falta caseId para acción', actionType, rawBody);
+        return NextResponse.json(
+          { ok: false, error: 'Folio requerido para actualizar estado' },
+          { status: 400 }
+        );
       }
-      const nextStatus = input.type === 'resolved' ? 'RESOLVED' : 'ESCALATED';
+
+      const nextStatus = actionType === 'resolved' ? 'RESOLVED' : 'ESCALATED';
       const updated = await transitionSupportTicketStatus({
-        ticketIdentifier: input.caseId,
+        ticketIdentifier: caseId,
         nextStatus,
         actorType: 'student',
         actorId: studentWhopId,
-        reason: input.type === 'escalation' ? 'Escalado por el alumno desde portal SERVE' : undefined,
+        reason:
+          actionType === 'escalation' ? 'Escalado por el alumno desde portal SERVE' : undefined,
       });
 
       await sendTelegramFallbackAlert({
@@ -79,15 +103,16 @@ export async function POST(req: Request) {
         studentPhone: updated.student_phone,
         program: updated.program,
         description: updated.description,
-        type: input.type,
+        type: actionType === 'resolved' ? 'resolved' : 'escalation',
       });
 
       return NextResponse.json({ ok: true, ticket: updated, caseId: updated.ticket_number });
     }
 
-    if (!studentName || !studentEmail || !description) {
+    if (!description) {
+      console.warn('Error 400: descripción/mensaje vacío en ticket', rawBody);
       return NextResponse.json(
-        { ok: false, error: 'Nombre, correo y descripción son obligatorios' },
+        { ok: false, error: 'La descripción o mensaje es obligatorio' },
         { status: 400 }
       );
     }
@@ -95,7 +120,7 @@ export async function POST(req: Request) {
     // 1. Guardar atómicamente en Supabase (genera PST-2026-000001 + mensaje + evento + outbox)
     const ticket = await createSupportTicket({
       tenantId,
-      experienceId: input.experienceId || null,
+      experienceId,
       studentWhopId,
       studentName,
       studentEmail,
@@ -123,7 +148,7 @@ export async function POST(req: Request) {
       caseId: ticket.ticket_number,
     });
   } catch (error: any) {
-    console.error('Error en /api/support/tickets:', error);
+    console.error('Error 500 en /api/support/tickets:', error);
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
 }

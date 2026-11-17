@@ -34,29 +34,37 @@ export function canTransitionStatus(from: TicketStatus, to: TicketStatus): boole
   return ALLOWED_TRANSITIONS[from]?.includes(to) ?? false;
 }
 
-// Esquema compatible con el formulario v1.0 actual y la API 2.0
-export const createTicketInputSchema = z.object({
-  tenantId: z.string().min(1).optional(),
-  companyId: z.string().min(1).optional(),
-  experienceId: z.string().optional().nullable(),
-  studentWhopId: z.string().optional(),
-  whopUserId: z.string().optional(),
-  studentName: z.string().min(2).max(150).optional(),
-  name: z.string().min(2).max(150).optional(),
-  studentEmail: z.string().email().optional(),
-  email: z.string().email().optional(),
-  studentPhone: z.string().max(40).optional().nullable(),
-  whatsapp: z.string().max(40).optional().nullable(),
-  program: z.string().max(120).optional().nullable(),
-  subject: z.string().max(200).optional(),
-  description: z.string().min(3).max(5000).optional(),
-  message: z.string().min(3).max(5000).optional(),
-  type: z.enum(['create', 'escalation', 'resolved']).optional(),
-  caseId: z.string().optional(), // Ignorado como fuente de verdad; se genera en Postgres
-});
+// Esquema flexible: acepta camelCase, snake_case y valores null/vacíos del formulario v1.0
+export const createTicketInputSchema = z
+  .object({
+    tenantId: z.string().nullable().optional(),
+    companyId: z.string().nullable().optional(),
+    company_id: z.string().nullable().optional(),
+    experienceId: z.string().nullable().optional(),
+    experience_id: z.string().nullable().optional(),
+    studentWhopId: z.string().nullable().optional(),
+    whopUserId: z.string().nullable().optional(),
+    student_whop_id: z.string().nullable().optional(),
+    studentName: z.string().nullable().optional(),
+    name: z.string().nullable().optional(),
+    user_name: z.string().nullable().optional(),
+    studentEmail: z.string().nullable().optional(),
+    email: z.string().nullable().optional(),
+    user_email: z.string().nullable().optional(),
+    studentPhone: z.string().nullable().optional(),
+    whatsapp: z.string().nullable().optional(),
+    program: z.string().nullable().optional(),
+    subject: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    message: z.string().nullable().optional(),
+    type: z.string().nullable().optional(),
+    caseId: z.string().nullable().optional(),
+    case_id: z.string().nullable().optional(),
+  })
+  .passthrough();
 
 export const transitionTicketSchema = z.object({
-  ticketIdentifier: z.string().min(1), // UUID o ticket_number (PST-2026-000001)
+  ticketIdentifier: z.string().min(1),
   nextStatus: z.enum(TICKET_STATUSES),
   reason: z.string().max(1000).optional(),
   resolution: z.string().max(2000).optional(),
