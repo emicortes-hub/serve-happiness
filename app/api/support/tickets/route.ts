@@ -7,6 +7,7 @@ import {
   transitionSupportTicketStatus,
 } from '@/lib/support/ticket-service';
 import { supabaseAdmin } from '@/lib/supabase';
+import { processOutboxBatch } from '@/lib/queues/outbox';
 
 export async function GET(req: Request) {
   try {
@@ -141,12 +142,19 @@ export async function POST(req: Request) {
       description: ticket.description,
       type: 'create',
     });
+      // 3. Procesar cola hacia GoHighLevel de forma inmediata y segura
+    try {
+      await processOutboxBatch(5);
+    } catch (syncErr) {
+      console.error('Error sincronizando outbox con GoHighLevel:', syncErr);
+    }
 
     return NextResponse.json({
       ok: true,
       ticket,
       caseId: ticket.ticket_number,
     });
+    
   } catch (error: any) {
     console.error('Error 500 en /api/support/tickets:', error);
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
