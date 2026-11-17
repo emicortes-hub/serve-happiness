@@ -9,3 +9,6 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
     persistSession: false,
   },
 });
+
+// Alias para compatibilidad con rutas existentes (/api/settings, /api/support, /api/chat)
+export const supabase = supabaseAdmin;
