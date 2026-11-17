@@ -58,9 +58,9 @@ export async function processOutboxBatch(limit = 10) {
           program: ticket.program,
         }));
 
-      // Paso B: Custom Object Support Tickets en GHL
-      const customObjectId = await syncGhlSupportTicketObject({
-        existingRecordId: ticket.ghl_custom_object_id,
+      // Paso B: Custom Object Support Tickets en GHL (usa columna ghl_record_id)
+      const recordId = await syncGhlSupportTicketObject({
+        existingRecordId: ticket.ghl_record_id,
         contactId,
         ticketId: ticket.id,
         ticketNumber: ticket.ticket_number,
@@ -81,18 +81,20 @@ export async function processOutboxBatch(limit = 10) {
         status: ticket.status,
       });
 
-      // Paso D: Persistir IDs de GHL en support_tickets y marcar SYNCED
-      await supabaseAdmin
+      // Paso D: Persistir IDs de GHL en support_tickets usando los nombres exactos de columna
+      const { error: updateTicketErr } = await supabaseAdmin
         .from('support_tickets')
         .update({
           ghl_contact_id: contactId,
-          ghl_custom_object_id: customObjectId,
+          ghl_record_id: recordId,
           ghl_opportunity_id: opportunityId,
           sync_status: 'SYNCED',
-          last_synced_at: new Date().toISOString(),
-          sync_error: null,
         })
         .eq('id', ticket.id);
+
+      if (updateTicketErr) {
+        throw new Error(`Error actualizando support_tickets: ${updateTicketErr.message}`);
+      }
 
       // Paso E: Marcar evento de outbox como PROCESSED
       await supabaseAdmin
@@ -107,8 +109,8 @@ export async function processOutboxBatch(limit = 10) {
       succeeded++;
     } catch (err: any) {
       failed++;
+      console.error('Fallo procesando outbox event:', event.id, err);
       const attemptCount = (event.attempts || 0) + 1;
-      // Backoff exponencial: 1m, 4m, 9m, 16m...
       const backoffSeconds = Math.pow(attemptCount, 2) * 60;
       const nextRetry = new Date(Date.now() + backoffSeconds * 1000).toISOString();
 
@@ -126,7 +128,6 @@ export async function processOutboxBatch(limit = 10) {
         .from('support_tickets')
         .update({
           sync_status: 'ERROR',
-          sync_error: err?.message || 'Error sincronizando con GHL',
         })
         .eq('id', event.aggregate_id);
     }
