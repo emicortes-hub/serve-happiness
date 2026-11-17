@@ -4,14 +4,11 @@ import { syncGhlSupportTicketObject } from '@/lib/integrations/highlevel/objects
 import { syncGhlSupportOpportunity } from '@/lib/integrations/highlevel/opportunities';
 
 export async function processOutboxBatch(limit = 10) {
-  const nowIso = new Date().toISOString();
-
   // 1. Obtener eventos pendientes listos para procesar
   const { data: events, error } = await supabaseAdmin
     .from('integration_outbox')
     .select('*')
     .in('status', ['PENDING', 'FAILED'])
-    .lte('next_retry_at', nowIso)
     .lt('attempts', 5)
     .order('created_at', { ascending: true })
     .limit(limit);
@@ -31,7 +28,6 @@ export async function processOutboxBatch(limit = 10) {
       .update({
         status: 'PROCESSING',
         attempts: (event.attempts || 0) + 1,
-        updated_at: new Date().toISOString(),
       })
       .eq('id', event.id);
 
@@ -58,7 +54,7 @@ export async function processOutboxBatch(limit = 10) {
           program: ticket.program,
         }));
 
-      // Paso B: Custom Object Support Tickets en GHL (usa columna ghl_record_id)
+      // Paso B: Custom Object Support Tickets en GHL
       const recordId = await syncGhlSupportTicketObject({
         existingRecordId: ticket.ghl_record_id,
         contactId,
@@ -81,7 +77,7 @@ export async function processOutboxBatch(limit = 10) {
         status: ticket.status,
       });
 
-      // Paso D: Persistir IDs de GHL en support_tickets usando los nombres exactos de columna
+      // Paso D: Persistir IDs de GHL en support_tickets
       const { error: updateTicketErr } = await supabaseAdmin
         .from('support_tickets')
         .update({
@@ -111,16 +107,12 @@ export async function processOutboxBatch(limit = 10) {
       failed++;
       console.error('Fallo procesando outbox event:', event.id, err);
       const attemptCount = (event.attempts || 0) + 1;
-      const backoffSeconds = Math.pow(attemptCount, 2) * 60;
-      const nextRetry = new Date(Date.now() + backoffSeconds * 1000).toISOString();
 
       await supabaseAdmin
         .from('integration_outbox')
         .update({
           status: attemptCount >= 5 ? 'DEAD_LETTER' : 'FAILED',
           last_error: err?.message || 'Error desconocido sincronizando con GHL',
-          next_retry_at: nextRetry,
-          updated_at: new Date().toISOString(),
         })
         .eq('id', event.id);
 
