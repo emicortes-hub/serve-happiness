@@ -1,12 +1,73 @@
 import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { caseId, name, email, whatsapp, program, message, type } = body;
+    const {
+      caseId,
+      name,
+      email,
+      whatsapp,
+      program,
+      message,
+      type,
+      companyId,
+      experienceId,
+      whopUserId,
+    } = body;
+
+    const resolvedCompanyId = companyId || 'biz_jbDM2ID0GqGW3z';
+
+    // 1. Asegurar registro del tenant en company_settings para evitar violación de clave foránea
+    await supabaseAdmin
+      .from('company_settings')
+      .upsert({ company_id: resolvedCompanyId }, { onConflict: 'company_id' });
+
+    // 2. Guardar o actualizar el ticket en Supabase (public.support_tickets)
+    if (type === 'escalation' || type === 'resolved') {
+      const newStatus = type === 'resolved' ? 'resolved' : 'escalated';
+      const { error: updateError } = await supabaseAdmin
+        .from('support_tickets')
+        .update({ status: newStatus })
+        .eq('case_id', caseId);
+
+      if (updateError) {
+        console.error('Error actualizando estado del ticket en Supabase:', updateError);
+      }
+    } else {
+      const { error: insertError } = await supabaseAdmin
+        .from('support_tickets')
+        .insert({
+          case_id: caseId,
+          company_id: resolvedCompanyId,
+          experience_id: experienceId || null,
+          whop_user_id: whopUserId || null,
+          user_name: name,
+          user_email: email,
+          whatsapp: whatsapp || null,
+          program: program || null,
+          message,
+          status: 'open',
+        });
+
+      if (insertError) {
+        console.error('Error insertando ticket en Supabase:', insertError);
+      }
+    }
+
+    // 3. Obtener configuración personalizada del tenant (si existe) o usar variables de entorno
+    const { data: settings } = await supabaseAdmin
+      .from('company_settings')
+      .select('telegram_chat_id, zoom_link')
+      .eq('company_id', resolvedCompanyId)
+      .maybeSingle();
 
     const token = process.env.TELEGRAM_BOT_TOKEN;
-    const chatId = process.env.TELEGRAM_CHAT_ID;
+    const chatId = settings?.telegram_chat_id || process.env.TELEGRAM_CHAT_ID;
+    const zoomUrl =
+      settings?.zoom_link ||
+      'https://us02web.zoom.us/j/9272409073?pwd=feP7nGIvZidKJBcqb6v3roewaQrQX1.1';
 
     if (!token || !chatId) {
       console.error('Faltan variables de entorno: TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID');
@@ -35,7 +96,6 @@ ${header}
 <i>"${message}"</i>
     `.trim();
 
-    // Solo botones con protocolo HTTPS válido para Telegram
     const inlineKeyboard: any[] = [];
     const actionRow = [];
 
@@ -50,7 +110,7 @@ ${header}
 
     actionRow.push({
       text: '🎥 Sala Zoom',
-      url: 'https://us02web.zoom.us/j/9272409073?pwd=feP7nGIvZidKJBcqb6v3roewaQrQX1.1',
+      url: zoomUrl,
     });
 
     inlineKeyboard.push(actionRow);
@@ -77,7 +137,7 @@ ${header}
 
     return NextResponse.json({ ok: true, data: telegramData.result });
   } catch (error: any) {
-    console.error('Excepción al enviar ticket a Telegram:', error);
+    console.error('Excepción al procesar ticket:', error);
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
 }
