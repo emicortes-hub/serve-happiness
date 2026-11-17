@@ -1,13 +1,25 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
-function mapStageIdToTicketStatus(stageId: string): string | null {
-  if (!stageId) return null;
-  if (stageId === process.env.GHL_STAGE_NEW_ID) return 'IN_REVIEW';
-  if (stageId === process.env.GHL_STAGE_IN_PROGRESS_ID) return 'IN_PROGRESS';
-  if (stageId === process.env.GHL_STAGE_WAITING_ID) return 'WAITING_STUDENT';
-  if (stageId === process.env.GHL_STAGE_ESCALATED_ID) return 'ESCALATED';
-  if (stageId === process.env.GHL_STAGE_RESOLVED_ID) return 'RESOLVED';
+function mapStageToTicketStatus(stageIdOrName: string): string | null {
+  if (!stageIdOrName) return null;
+  const val = stageIdOrName.trim();
+  const lower = val.toLowerCase();
+
+  // Mapeo por Stage ID (UUID)
+  if (val === process.env.GHL_STAGE_NEW_ID) return 'IN_REVIEW';
+  if (val === process.env.GHL_STAGE_IN_PROGRESS_ID) return 'IN_PROGRESS';
+  if (val === process.env.GHL_STAGE_WAITING_ID) return 'WAITING_STUDENT';
+  if (val === process.env.GHL_STAGE_ESCALATED_ID) return 'ESCALATED';
+  if (val === process.env.GHL_STAGE_RESOLVED_ID) return 'RESOLVED';
+
+  // Mapeo por Stage Name (desde Workflow GHL)
+  if (lower === 'new / triage') return 'IN_REVIEW';
+  if (lower === 'in progress') return 'IN_PROGRESS';
+  if (lower === 'waiting student') return 'WAITING_STUDENT';
+  if (lower === 'escalated') return 'ESCALATED';
+  if (lower === 'resolved') return 'RESOLVED';
+
   return null;
 }
 
@@ -16,7 +28,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const eventType = body?.type || body?.event || '';
 
-    // 1. Respuesta saliente de un mentor desde GHL Conversations -> Alumno en Whop
+    // 1. Respuesta saliente de un mentor desde GHL -> Alumno en Whop
     if (
       eventType === 'OutboundMessage' ||
       (body?.direction === 'outbound' && (body?.body || body?.message))
@@ -111,17 +123,19 @@ export async function POST(req: Request) {
     if (
       eventType === 'OpportunityStageUpdate' ||
       eventType === 'OpportunityUpdate' ||
-      body?.pipelineStageId
+      body?.pipelineStageId ||
+      body?.stageName
     ) {
       const opportunityId = body?.id || body?.opportunityId || body?.opportunity_id;
       const pipelineId = body?.pipelineId || body?.pipeline_id;
-      const newStageId = body?.pipelineStageId || body?.pipeline_stage_id;
+      const newStageValue =
+        body?.pipelineStageId || body?.pipeline_stage_id || body?.stageName || '';
 
       if (pipelineId && pipelineId !== process.env.GHL_PIPELINE_ID) {
         return NextResponse.json({ ok: true, ignored: 'other_pipeline' });
       }
 
-      const mappedStatus = mapStageIdToTicketStatus(newStageId);
+      const mappedStatus = mapStageToTicketStatus(newStageValue);
       if (!opportunityId || !mappedStatus) {
         return NextResponse.json({ ok: true, ignored: 'unmapped_stage' });
       }
@@ -149,7 +163,7 @@ export async function POST(req: Request) {
         tenant_id: ticket.tenant_id,
         actor_role: 'mentor',
         event_type: 'ticket.status_changed_from_ghl',
-        payload: { from: ticket.status, to: mappedStatus, stageId: newStageId },
+        payload: { from: ticket.status, to: mappedStatus, stage: newStageValue },
       });
 
       return NextResponse.json({
