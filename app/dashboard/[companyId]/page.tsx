@@ -44,14 +44,14 @@ interface DashboardStats {
 }
 
 const STATUS_META: Record<string, { label: string; bg: string; color: string; border: string }> = {
-  NEW: { label: 'Nuevo', bg: 'rgba(14,165,233,0.15)', color: '#38bdf8', border: 'rgba(14,165,233,0.35)' },
-  IN_REVIEW: { label: 'En Revisión', bg: 'rgba(99,102,241,0.15)', color: '#818cf8', border: 'rgba(99,102,241,0.35)' },
-  ASSIGNED: { label: 'Asignado', bg: 'rgba(168,85,247,0.15)', color: '#c084fc', border: 'rgba(168,85,247,0.35)' },
-  IN_PROGRESS: { label: 'En Progreso', bg: 'rgba(245,158,11,0.15)', color: '#fbbf24', border: 'rgba(245,158,11,0.35)' },
-  WAITING_STUDENT: { label: 'Esperando Alumno', bg: 'rgba(16,185,129,0.15)', color: '#34d399', border: 'rgba(16,185,129,0.35)' },
-  ESCALATED: { label: 'Escalado', bg: 'rgba(244,63,94,0.15)', color: '#fb7185', border: 'rgba(244,63,94,0.35)' },
-  RESOLVED: { label: 'Resuelto', bg: 'rgba(113,113,122,0.2)', color: '#d4d4d8', border: 'rgba(113,113,122,0.4)' },
-  CLOSED: { label: 'Cerrado', bg: 'rgba(39,39,42,0.6)', color: '#71717a', border: '#3f3f46' },
+  NEW: { label: 'Nuevo', bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' },
+  IN_REVIEW: { label: 'En Revisión', bg: '#eef2ff', color: '#4338ca', border: '#c7d2fe' },
+  ASSIGNED: { label: 'Asignado', bg: '#f0f9ff', color: '#0369a1', border: '#bae6fd' },
+  IN_PROGRESS: { label: 'En Progreso', bg: '#fffbeb', color: '#b45309', border: '#fde68a' },
+  WAITING_STUDENT: { label: 'Esperando Alumno', bg: '#ecfdf5', color: '#047857', border: '#a7f3d0' },
+  ESCALATED: { label: 'Escalado', bg: '#fff1f2', color: '#be123c', border: '#fecdd3' },
+  RESOLVED: { label: 'Resuelto', bg: '#f1f5f9', color: '#334155', border: '#cbd5e1' },
+  CLOSED: { label: 'Cerrado', bg: '#f8fafc', color: '#64748b', border: '#e2e8f0' },
 };
 
 export default function AdminDashboardPage() {
@@ -189,102 +189,135 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="ops-root">
+    <div className="pst-root">
       <style>{`
-        .ops-root {
+        .pst-root {
           min-height: 100vh;
-          background-color: #09090b;
-          color: #f4f4f5;
+          background-color: #f8fafc;
+          color: #0f295c;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-          padding: 24px;
           box-sizing: border-box;
         }
-        .ops-container {
+        .pst-header-band {
+          background: linear-gradient(135deg, #0b1f44 0%, #1d4ed8 100%);
+          color: #ffffff;
+          padding: 22px 24px;
+          box-shadow: 0 4px 16px rgba(11, 31, 68, 0.14);
+        }
+        .pst-header-inner {
           max-width: 1320px;
           margin: 0 auto;
-        }
-        .ops-header {
           display: flex;
           flex-wrap: wrap;
           justify-content: space-between;
           align-items: center;
           gap: 16px;
-          padding-bottom: 20px;
-          border-bottom: 1px solid #27272a;
-          margin-bottom: 22px;
         }
-        .ops-title-row {
+        .pst-title-row {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 12px;
         }
-        .ops-dot {
-          width: 10px;
-          height: 10px;
+        .pst-badge-brand {
+          background: rgba(255, 255, 255, 0.16);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          color: #ffffff;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          padding: 4px 10px;
+          border-radius: 6px;
+          text-transform: uppercase;
+        }
+        .pst-dot {
+          width: 9px;
+          height: 9px;
           border-radius: 50%;
-          background: #10b981;
-          box-shadow: 0 0 10px #10b981;
+          background: #34d399;
+          box-shadow: 0 0 8px #34d399;
         }
-        .ops-title {
+        .pst-title {
           margin: 0;
           font-size: 20px;
           font-weight: 700;
           color: #ffffff;
         }
-        .ops-subtitle {
-          margin: 4px 0 0 0;
+        .pst-subtitle {
+          margin: 5px 0 0 0;
           font-size: 12px;
-          color: #a1a1aa;
+          color: #dbeafe;
         }
-        .ops-actions {
+        .pst-actions {
           display: flex;
           gap: 10px;
         }
-        .btn-secondary {
-          background: #18181b;
-          border: 1px solid #3f3f46;
-          color: #e4e4e7;
-          padding: 8px 14px;
-          border-radius: 8px;
-          font-size: 12px;
-          font-weight: 500;
-          cursor: pointer;
-        }
-        .btn-secondary:hover { background: #27272a; }
-        .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-primary {
-          background: #7c3aed;
-          border: 1px solid #8b5cf6;
+        .btn-header-ghost {
+          background: rgba(255, 255, 255, 0.12);
+          border: 1px solid rgba(255, 255, 255, 0.3);
           color: #ffffff;
-          padding: 8px 16px;
+          padding: 8px 14px;
           border-radius: 8px;
           font-size: 12px;
           font-weight: 600;
           cursor: pointer;
+          transition: background 0.15s;
         }
-        .btn-primary:hover { background: #6d28d9; }
+        .btn-header-ghost:hover { background: rgba(255, 255, 255, 0.22); }
+        .btn-header-ghost:disabled { opacity: 0.55; cursor: not-allowed; }
+        .btn-header-white {
+          background: #ffffff;
+          border: 1px solid #ffffff;
+          color: #1d4ed8;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background 0.15s;
+        }
+        .btn-header-white:hover { background: #eff6ff; }
+        .btn-primary {
+          background: #1d4ed8;
+          border: 1px solid #1e40af;
+          color: #ffffff;
+          padding: 9px 18px;
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.15s;
+        }
+        .btn-primary:hover { background: #1e40af; }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pst-container {
+          max-width: 1320px;
+          margin: 0 auto;
+          padding: 24px;
+        }
         .kpi-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-          gap: 12px;
+          grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+          gap: 14px;
           margin-bottom: 22px;
         }
         .kpi-card {
-          background: #121216;
-          border: 1px solid #27272a;
+          background: #ffffff;
+          border: 1px solid #dbeafe;
           border-radius: 12px;
           padding: 16px;
+          box-shadow: 0 1px 3px rgba(15, 41, 92, 0.04);
         }
         .kpi-label {
           margin: 0;
           font-size: 12px;
-          color: #a1a1aa;
+          font-weight: 600;
+          color: #475569;
         }
         .kpi-value {
           margin: 6px 0 0 0;
           font-size: 26px;
-          font-weight: 700;
+          font-weight: 800;
+          color: #1d4ed8;
         }
         .toolbar {
           display: flex;
@@ -300,32 +333,41 @@ export default function AdminDashboardPage() {
           gap: 8px;
         }
         .tab-btn {
-          background: #121216;
-          border: 1px solid #27272a;
-          color: #a1a1aa;
-          padding: 6px 12px;
+          background: #ffffff;
+          border: 1px solid #cbd5e1;
+          color: #1e3a8a;
+          padding: 7px 14px;
           border-radius: 8px;
           font-size: 12px;
-          font-weight: 500;
+          font-weight: 600;
           cursor: pointer;
+          transition: all 0.15s;
+        }
+        .tab-btn:hover {
+          background: #eff6ff;
+          border-color: #93c5fd;
         }
         .tab-btn.active {
-          background: rgba(124, 58, 237, 0.2);
-          border-color: #8b5cf6;
-          color: #ddd6fe;
+          background: #1d4ed8;
+          border-color: #1d4ed8;
+          color: #ffffff;
         }
         .search-input {
-          background: #121216;
-          border: 1px solid #27272a;
-          color: #f4f4f5;
+          background: #ffffff;
+          border: 1px solid #cbd5e1;
+          color: #0f295c;
           padding: 8px 14px;
           border-radius: 8px;
           font-size: 12px;
-          width: 300px;
+          width: 310px;
           max-width: 100%;
           outline: none;
         }
-        .search-input:focus { border-color: #8b5cf6; }
+        .search-input::placeholder { color: #94a3b8; }
+        .search-input:focus {
+          border-color: #1d4ed8;
+          box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+        }
         .split-grid {
           display: grid;
           grid-template-columns: 420px 1fr;
@@ -343,20 +385,25 @@ export default function AdminDashboardPage() {
           overflow-y: auto;
         }
         .ticket-card {
-          background: #121216;
-          border: 1px solid #27272a;
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
           border-radius: 12px;
-          padding: 14px;
+          padding: 15px;
           text-align: left;
           cursor: pointer;
-          color: inherit;
+          color: #0f295c;
           width: 100%;
-          transition: border-color 0.15s;
+          transition: all 0.15s;
+          box-shadow: 0 1px 2px rgba(15, 41, 92, 0.03);
         }
-        .ticket-card:hover { border-color: #3f3f46; }
+        .ticket-card:hover {
+          border-color: #93c5fd;
+          background: #f8fafc;
+        }
         .ticket-card.selected {
-          background: #18181f;
-          border-color: #8b5cf6;
+          background: #eff6ff;
+          border: 1.5px solid #1d4ed8;
+          box-shadow: 0 4px 12px rgba(29, 78, 216, 0.08);
         }
         .card-top {
           display: flex;
@@ -367,41 +414,44 @@ export default function AdminDashboardPage() {
         .folio {
           font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
           font-size: 12px;
-          font-weight: 600;
-          color: #c084fc;
+          font-weight: 700;
+          color: #1d4ed8;
         }
         .badge {
           font-size: 11px;
-          font-weight: 600;
-          padding: 2px 8px;
+          font-weight: 700;
+          padding: 2px 9px;
           border-radius: 999px;
           border: 1px solid;
         }
         .card-subject {
           margin: 8px 0 4px 0;
           font-size: 14px;
-          font-weight: 600;
-          color: #ffffff;
+          font-weight: 700;
+          color: #0f295c;
         }
         .card-meta {
           display: flex;
           justify-content: space-between;
           font-size: 12px;
-          color: #a1a1aa;
+          color: #3b5998;
+          font-weight: 500;
         }
         .card-footer {
           display: flex;
           justify-content: space-between;
           margin-top: 10px;
           padding-top: 8px;
-          border-top: 1px solid #27272a;
+          border-top: 1px solid #e2e8f0;
           font-size: 11px;
+          font-weight: 600;
         }
         .inspector {
-          background: #121216;
-          border: 1px solid #27272a;
+          background: #ffffff;
+          border: 1px solid #dbeafe;
           border-radius: 12px;
-          padding: 20px;
+          padding: 22px;
+          box-shadow: 0 2px 8px rgba(15, 41, 92, 0.04);
         }
         .inspector-header {
           display: flex;
@@ -410,24 +460,27 @@ export default function AdminDashboardPage() {
           align-items: flex-start;
           gap: 12px;
           padding-bottom: 14px;
-          border-bottom: 1px solid #27272a;
+          border-bottom: 1px solid #e2e8f0;
         }
         .status-select {
-          background: #18181b;
-          border: 1px solid #3f3f46;
-          color: #f4f4f5;
-          padding: 6px 10px;
+          background: #eff6ff;
+          border: 1px solid #93c5fd;
+          color: #1e3a8a;
+          font-weight: 600;
+          padding: 7px 12px;
           border-radius: 8px;
           font-size: 12px;
+          cursor: pointer;
         }
         .ghl-strip {
           display: flex;
           flex-wrap: wrap;
           gap: 12px;
           font-size: 11px;
-          color: #71717a;
+          font-weight: 500;
+          color: #475569;
           padding: 10px 0;
-          border-bottom: 1px solid #27272a;
+          border-bottom: 1px solid #e2e8f0;
         }
         .thread {
           display: flex;
@@ -440,34 +493,34 @@ export default function AdminDashboardPage() {
         .msg-box {
           border-radius: 10px;
           padding: 12px 14px;
-          border: 1px solid #27272a;
-          background: #18181b;
+          border: 1px solid #e2e8f0;
+          background: #f8fafc;
         }
         .msg-box.mentor {
-          background: rgba(124, 58, 237, 0.12);
-          border-color: rgba(139, 92, 246, 0.35);
+          background: #eff6ff;
+          border-color: #bfdbfe;
           margin-left: 18px;
         }
         .msg-box.internal {
-          background: rgba(245, 158, 11, 0.1);
-          border-color: rgba(245, 158, 11, 0.35);
+          background: #fffbeb;
+          border-color: #fde68a;
         }
         .msg-header {
           display: flex;
           justify-content: space-between;
           font-size: 11px;
-          color: #a1a1aa;
+          color: #64748b;
           margin-bottom: 6px;
         }
         .msg-body {
           margin: 0;
           font-size: 13px;
           line-height: 1.5;
-          color: #e4e4e7;
+          color: #0f295c;
           white-space: pre-wrap;
         }
         .reply-form {
-          border-top: 1px solid #27272a;
+          border-top: 1px solid #e2e8f0;
           padding-top: 14px;
           display: flex;
           flex-direction: column;
@@ -483,9 +536,9 @@ export default function AdminDashboardPage() {
         .reply-textarea {
           width: 100%;
           box-sizing: border-box;
-          background: #18181b;
-          border: 1px solid #3f3f46;
-          color: #f4f4f5;
+          background: #ffffff;
+          border: 1px solid #cbd5e1;
+          color: #0f295c;
           border-radius: 8px;
           padding: 10px 12px;
           font-size: 13px;
@@ -493,65 +546,72 @@ export default function AdminDashboardPage() {
           resize: vertical;
           outline: none;
         }
-        .reply-textarea:focus { border-color: #8b5cf6; }
+        .reply-textarea::placeholder { color: #94a3b8; }
+        .reply-textarea:focus {
+          border-color: #1d4ed8;
+          box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+        }
       `}</style>
 
-      <div className="ops-container">
-        {/* Header */}
-        <div className="ops-header">
+      {/* Blue Pro Sales Header */}
+      <div className="pst-header-band">
+        <div className="pst-header-inner">
           <div>
-            <div className="ops-title-row">
-              <span className="ops-dot" />
-              <h1 className="ops-title">SERVE Support 2.0 — Centro de Operaciones</h1>
+            <div className="pst-title-row">
+              <span className="pst-badge-brand">Pro Sales Training</span>
+              <span className="pst-dot" />
+              <h1 className="pst-title">Centro de Operaciones y Soporte</h1>
             </div>
-            <p className="ops-subtitle">
-              Monitoreo en tiempo real sincronizado con GoHighLevel (PST | Support Operations)
+            <p className="pst-subtitle">
+              Gestión académica y técnica • Sincronizado en tiempo real con GoHighLevel (PST | Support Operations)
             </p>
           </div>
 
-          <div className="ops-actions">
+          <div className="pst-actions">
             <button
               onClick={handleProcessOutbox}
               disabled={syncingOutbox}
-              className="btn-secondary"
+              className="btn-header-ghost"
             >
               {syncingOutbox
                 ? 'Sincronizando GHL...'
                 : `Sincronizar Cola GHL (${stats.outboxPending})`}
             </button>
-            <button onClick={loadDashboard} className="btn-primary">
+            <button onClick={loadDashboard} className="btn-header-white">
               Actualizar
             </button>
           </div>
         </div>
+      </div>
 
+      <div className="pst-container">
         {/* KPI Cards */}
         <div className="kpi-grid">
           <div className="kpi-card">
             <p className="kpi-label">Total Tickets</p>
-            <p className="kpi-value" style={{ color: '#ffffff' }}>{stats.total}</p>
+            <p className="kpi-value">{stats.total}</p>
           </div>
           <div className="kpi-card">
             <p className="kpi-label">Activos / En Curso</p>
-            <p className="kpi-value" style={{ color: '#fbbf24' }}>{stats.open}</p>
+            <p className="kpi-value" style={{ color: '#2563eb' }}>{stats.open}</p>
           </div>
           <div className="kpi-card">
             <p className="kpi-label">Esperando Alumno</p>
-            <p className="kpi-value" style={{ color: '#34d399' }}>{stats.waitingStudent}</p>
+            <p className="kpi-value" style={{ color: '#059669' }}>{stats.waitingStudent}</p>
           </div>
           <div className="kpi-card">
             <p className="kpi-label">Escalados</p>
-            <p className="kpi-value" style={{ color: '#fb7185' }}>{stats.escalated}</p>
+            <p className="kpi-value" style={{ color: '#e11d48' }}>{stats.escalated}</p>
           </div>
           <div className="kpi-card">
             <p className="kpi-label">Resueltos</p>
-            <p className="kpi-value" style={{ color: '#d4d4d8' }}>{stats.resolved}</p>
+            <p className="kpi-value" style={{ color: '#1e3a8a' }}>{stats.resolved}</p>
           </div>
           <div className="kpi-card">
             <p className="kpi-label">Errores Sync GHL</p>
             <p
               className="kpi-value"
-              style={{ color: stats.syncErrors > 0 ? '#fb7185' : '#34d399' }}
+              style={{ color: stats.syncErrors > 0 ? '#e11d48' : '#059669' }}
             >
               {stats.syncErrors}
             </p>
@@ -589,24 +649,24 @@ export default function AdminDashboardPage() {
 
         {/* Split View */}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '60px 0', color: '#71717a', fontSize: 13 }}>
-            Cargando operaciones...
+          <div style={{ textAlign: 'center', padding: '60px 0', color: '#1d4ed8', fontSize: 13, fontWeight: 600 }}>
+            Cargando operaciones de Pro Sales Training...
           </div>
         ) : (
           <div className="split-grid">
             {/* Ticket List */}
             <div className="ticket-list">
               {filteredTickets.length === 0 ? (
-                <div className="kpi-card" style={{ textAlign: 'center', color: '#71717a', fontSize: 12 }}>
+                <div className="kpi-card" style={{ textAlign: 'center', color: '#64748b', fontSize: 12 }}>
                   No hay tickets que coincidan con este filtro.
                 </div>
               ) : (
                 filteredTickets.map((ticket) => {
                   const meta = STATUS_META[ticket.status] || {
                     label: ticket.status,
-                    bg: '#27272a',
-                    color: '#d4d4d8',
-                    border: '#3f3f46',
+                    bg: '#f1f5f9',
+                    color: '#334155',
+                    border: '#cbd5e1',
                   };
                   const isSelected = ticket.id === selectedTicket?.id;
 
@@ -642,15 +702,15 @@ export default function AdminDashboardPage() {
                           style={{
                             color:
                               ticket.sync_status === 'SYNCED'
-                                ? '#34d399'
+                                ? '#059669'
                                 : ticket.sync_status === 'ERROR'
-                                ? '#fb7185'
-                                : '#fbbf24',
+                                ? '#e11d48'
+                                : '#d97706',
                           }}
                         >
                           GHL: {ticket.sync_status}
                         </span>
-                        <span style={{ color: '#71717a' }}>
+                        <span style={{ color: '#64748b' }}>
                           {new Date(ticket.updated_at).toLocaleDateString('es-MX', {
                             day: '2-digit',
                             month: 'short',
@@ -668,7 +728,7 @@ export default function AdminDashboardPage() {
             {/* Detail Inspector */}
             <div className="inspector">
               {!selectedTicket ? (
-                <div style={{ textAlign: 'center', padding: '80px 0', color: '#71717a', fontSize: 13 }}>
+                <div style={{ textAlign: 'center', padding: '80px 0', color: '#64748b', fontSize: 13 }}>
                   Selecciona un ticket de la izquierda para ver los detalles.
                 </div>
               ) : (
@@ -677,15 +737,15 @@ export default function AdminDashboardPage() {
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span className="folio">{selectedTicket.ticket_number}</span>
-                        <span style={{ color: '#52525b' }}>•</span>
-                        <span style={{ fontSize: 12, color: '#a1a1aa' }}>
+                        <span style={{ color: '#94a3b8' }}>•</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#2563eb' }}>
                           {selectedTicket.program}
                         </span>
                       </div>
-                      <h2 style={{ margin: '6px 0 4px 0', fontSize: 16, color: '#ffffff' }}>
+                      <h2 style={{ margin: '6px 0 4px 0', fontSize: 16, fontWeight: 700, color: '#0f295c' }}>
                         {selectedTicket.subject}
                       </h2>
-                      <p style={{ margin: 0, fontSize: 12, color: '#a1a1aa' }}>
+                      <p style={{ margin: 0, fontSize: 12, color: '#3b5998' }}>
                         {selectedTicket.student_name} ({selectedTicket.student_email})
                       </p>
                     </div>
@@ -717,7 +777,7 @@ export default function AdminDashboardPage() {
                   <div className="thread">
                     <div className="msg-box">
                       <div className="msg-header">
-                        <strong style={{ color: '#e4e4e7' }}>
+                        <strong style={{ color: '#0f295c' }}>
                           {selectedTicket.student_name} (Descripción inicial)
                         </strong>
                         <span>{new Date(selectedTicket.created_at).toLocaleString('es-MX')}</span>
@@ -737,14 +797,14 @@ export default function AdminDashboardPage() {
                             <strong
                               style={{
                                 color: isInternal
-                                  ? '#fcd34d'
+                                  ? '#b45309'
                                   : isMentor
-                                  ? '#d8b4fe'
-                                  : '#e4e4e7',
+                                  ? '#1d4ed8'
+                                  : '#0f295c',
                               }}
                             >
                               {msg.sender_name}{' '}
-                              {isInternal ? '(Nota Interna)' : isMentor ? '(Mentor)' : '(Alumno)'}
+                              {isInternal ? '(Nota Interna)' : isMentor ? '(Mentor PST)' : '(Alumno)'}
                             </strong>
                             <span>{new Date(msg.created_at).toLocaleString('es-MX')}</span>
                           </div>
@@ -756,7 +816,7 @@ export default function AdminDashboardPage() {
 
                   <form onSubmit={handleSendReply} className="reply-form">
                     <div className="reply-controls">
-                      <span style={{ fontSize: 12, fontWeight: 600, color: '#d4d4d8' }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#0f295c' }}>
                         Responder al ticket
                       </span>
                       <div style={{ display: 'flex', gap: 8 }}>
@@ -784,7 +844,7 @@ export default function AdminDashboardPage() {
                       placeholder={
                         replyVisibility === 'public'
                           ? 'Escribe la respuesta que verá el alumno en Whop...'
-                          : 'Escribe una nota interna solo visible para el equipo...'
+                          : 'Escribe una nota interna solo visible para el equipo de Pro Sales Training...'
                       }
                       className="reply-textarea"
                     />
